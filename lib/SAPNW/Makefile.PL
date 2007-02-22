@@ -3,7 +3,6 @@ use ExtUtils::MakeMaker;
 # FIND POSSIBLE RFC INSTALLATIONS
 my @POSSIBLE_RFC_DIRS = qw(/usr/sap/nwrfcsdk /usr/local /usr);
 my $EMBED_MANIFEST= 0;
-map {my($key,$val) = split(/=/,$_); $EMBED_MANIFEST = 1 if $key eq "EMBED_MANIFEST" && $val =~ /yes/ } @ARGV;
 
 # the ADDITIONAL_LIBS needs to be modified for each OS flavour - the nwrfcsdk
 # has the information regarding where libs and incs resides for each
@@ -19,17 +18,29 @@ my $ADDITIONAL_LIBS = '-lm -ldl -lrt -lpthread ';
 
 use File::Basename qw(dirname basename);
 use Getopt::Long;
-use vars qw($opt_source $opt_addlibs $opt_help);
+use vars qw($opt_source $opt_addlibs $opt_embed_manifest $opt_help);
 
-&GetOptions("source=s", \$opt_source, "addlibs=s", \$opt_addlibs, "iconv=s", \$opt_iconv, "help", \$opt_help);
+&GetOptions("source=s", \$opt_source, "addlibs=s", \$opt_addlibs, "embed-manifest", \$opt_embed_manifest, "help", \$opt_help);
 
-$ADD_FLAGS = " -g -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -m64 -mno-3dnow -fno-strict-aliasing -pipe -fexceptions -funsigned-char -Wall -Wno-uninitialized -Wno-long-long -Wcast-align ";
-$ADD_FLAGS .= " -DSAPwithUNICODE ";
-$ADD_FLAGS .= " -DSAPonUNIX ";
-$ADD_FLAGS .= " -DSAP_PLATFORM_MAKENAME=linuxx86_64 ";
-$ADD_FLAGS .= " -D__NO_MATH_INLINES -fPIC ";
-$ADD_FLAGS .= " -DSAPwithTHREADS ";
+$EMBED_MANIFEST = 1 if $opt_embed_manifest;
 
+if($^O eq 'MSWin32') {
+  $ADD_FLAGS = " -DWIN32";
+  $ADD_FLAGS .= " -D_DEBUG";
+  $ADD_FLAGS .= " -D_CONSOLE";
+  $ADD_FLAGS .= " -DUNICODE";
+  $ADD_FLAGS .= " -D_UNICODE";
+  $ADD_FLAGS .= " -DSAPwithUNICODE ";
+  $ADD_FLAGS .= " -DSAPonNT ";
+  $ADD_FLAGS .= " -DSAP_PLATFORM_MAKENAME=ntintel ";
+} else {
+  $ADD_FLAGS = " -g -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -m64 -mno-3dnow -fno-strict-aliasing -pipe -fexceptions -funsigned-char -Wall -Wno-uninitialized -Wno-long-long -Wcast-align ";
+  $ADD_FLAGS .= " -DSAPwithUNICODE ";
+  $ADD_FLAGS .= " -DSAPonUNIX ";
+  $ADD_FLAGS .= " -DSAP_PLATFORM_MAKENAME=linuxx86_64 ";
+  $ADD_FLAGS .= " -D__NO_MATH_INLINES -fPIC ";
+  $ADD_FLAGS .= " -DSAPwithTHREADS ";
+}
 
 my ($iconv_inc, $iconv_lib);
 if ($opt_iconv){
@@ -135,6 +146,10 @@ print <<INFO;
 BUILD INFORMATION
 ================================================
 
+source opt:          $opt_source
+addlibs opt:         $opt_addlibs
+embed_manifest opt:  $opt_embed_manifest
+ADD_CFLAGS:          $ADD_FLAGS
 sapnwrfc dir:        $RFC_DIR
 libraries:      		 $ADDITIONAL_LIBS $RFC_LIB $LIBS
 include dir:    		 $RFC_INC

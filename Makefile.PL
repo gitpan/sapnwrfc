@@ -1,8 +1,8 @@
 use ExtUtils::MakeMaker;
 use Getopt::Long;
-use vars qw($opt_source $opt_addlibs $opt_help);
+use vars qw($opt_source $opt_addlibs $opt_embed_manifest $opt_help);
 
-&GetOptions("source=s", \$opt_source, "addlibs=s", \$opt_addlibs, "iconv=s", \$opt_iconv, "help", \$opt_help);
+&GetOptions("source=s", \$opt_source, "addlibs=s", \$opt_addlibs, "embed-manifest", \$opt_embed_manifest, "help", \$opt_help);
 
 
 # spew forth the help
@@ -38,10 +38,8 @@ right direction:
   that you would put in LDFLAGS.
   By default this is ' -lm -ldl -lpthread '
 
-(3) --iconv /some/path/to/iconv
-  This says where the path is to iconv (minus the ./include|./lib)
-  This path will be added to the build plus the explicit linking 
-  of -liconv.
+(3) --embed-manifest 
+  used for the win32 build to embed the manifest file.
 
 Example:
 

@@ -2,7 +2,7 @@ package sapnwrfc;
 use strict;
 
 use vars qw($VERSION $AUTOLOAD $DEBUG);
-$VERSION = '0.02';
+$VERSION = '0.03';
 
 use SAPNW::Base;
 $SAPNW::Base::DEBUG = 0;
@@ -43,8 +43,13 @@ sapnwrfc is an RFC based connector to SAP specifically designed for use with the
 
 The next generation RFCSDK from SAP provides a number of interesting new features. The two most important are:
 
-  * UNICODE support
-  * deep/nested structures
+=over 4
+
+=item * UNICODE support
+
+=item * deep/nested structures
+
+=back
 
 The UNICODE support is built fundamentally into the core of the new SDK, and as a result this is reflected in sapnwrfc. sapnwrfc takes UTF-8 as its only input character set, and handles the translation of this to UTF-16 as required by the RFCSDK.
 
@@ -52,11 +57,20 @@ Deep and complex structures are now supported fully. Please see the test_deep.rb
 
 sapnwrfc is a departure to the way the original SAP::Rfc (http://search.cpan.org/search?module=SAP::Rfc) works. It aims to simplify the exchange of native Perl data types between the user application and the connector. This means that the following general rules should be observered, when passing values to and from RFC interface parameters and tables:
 
-  * Tables expect Arrays of Hashes.
-  * Parameters with structures expect Hashes.
-  * CHAR, DATE, TIME, STRING, XSTRING, and BYTE type parameters expect String values.
-	* BCD, and FLOAT expect a string representing the number.
-  * all INT types must be Perl ints.
+=over 4
+
+=item * Tables expect Arrays of Hashes.
+
+=item * Parameters with structures expect Hashes.
+
+=item * CHAR, DATE, TIME, STRING, XSTRING, and BYTE type parameters expect String values.
+
+=item * BCD, and FLOAT expect a string representing the number.
+
+=item * all INT types must be Perl ints.
+
+=back
+
 
 There are a lot of examples of passing data in and out of the connector in the test suite - please refer to these to gain a better understanding of how to make it work.
 
@@ -78,12 +92,19 @@ Note: if you supply your config via the YAML based file, you can override any or
 
 =head1 AUTHOR
 
-Piers Harding, piers@ompa.net.
+Piers Harding, piers@cpan.org.
 
 Many thanks to:
-  Craig Cmehil - for making the connnections
-  Ulrich Schmidt - for tireless help in development
-  Olivier Boudry - the build and test meister
+
+=over 4
+
+=item * Craig Cmehil - for making the connnections
+
+=item * Ulrich Schmidt - for tireless help in development
+
+=item * Olivier Boudry - the build and test meister
+
+=back
 
 
 =head1 SEE ALSO
