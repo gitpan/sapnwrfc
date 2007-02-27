@@ -2008,9 +2008,11 @@ SV * SAPNWRFC_invoke(SV* sv_func_call){
 
   idx = hv_iterinit(h_parameters);
 
+  /* some might not have parameters like RFC_PING
 	if (idx == 0) {
 	  croak("No invoke call parameters\n");
 	}
+	*/
 
 	for (i = 0; i < idx; i++) {
      h_entry = hv_iternext( h_parameters );

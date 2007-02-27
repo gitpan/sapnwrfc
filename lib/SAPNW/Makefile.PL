@@ -189,7 +189,11 @@ sub MY::constants {
     my $class = shift;
     my $inherited = $class->SUPER::constants(@_);
 #    warn "CONSTANTS: $inherited\n";
-   $inherited =~ s|\s\Q../blib\E| ../../blib|g;
+	  if ($^O =~ /MSWin32/i){
+      $inherited =~ s|\s\Q..\blib\E| ..\\..\\blib|g;
+	  } else {
+      $inherited =~ s|\s\Q../blib\E| ../../blib|g;
+		}
     return $inherited;
 }
 
@@ -214,9 +218,9 @@ sub MY::dynamic_lib {
   my $self = shift; 
   my $section = $self->MM::dynamic_lib;
 	if ($^O =~ /MSWin32/i && $EMBED_MANIFEST){
-	  $section .= "\tcd blib\\arch\\auto\\SAPNW\\Connection\n";
+	  $section .= "\tcd ..\\..\\blib\\arch\\auto\\SAPNW\\Connection\n";
 	  $section .= "\tmt.exe -outputresource:Connection.dll;2 -manifest Connection.dll.manifest\n";
-	  $section .= "\tcd ..\\..\\..\\..\\..\n";
+	  $section .= "\tcd ..\\..\\..\\..\\..\\lib\\SAPNW\n";
 	}
   if ($^O !~ /MSWin32/i){
 	  $section =~ s/(\$\(INST_DYNAMIC\)\: )/$1\$\(BASEEXT\)\.i /s;
@@ -248,7 +252,7 @@ sub Candidate {
     my $libd = (-d "$dir/out32dll") ? 'out32dll' : 'lib';
     if (opendir(LIBDIR, "$dir/$libd")) {
     while (defined($_ = readdir(LIBDIR))) {
-      push(@libs, 'sapnwrfc') if /libsapnwrfc/i;
+      push(@libs, 'sapnwrfc') if /sapnwrfc/i;
     }
     closedir(LIBDIR);
     }

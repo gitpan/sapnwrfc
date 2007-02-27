@@ -53,6 +53,24 @@ HELP
 }
 
 
+sub MY::subdirs {                                                                                       
+  my $self = shift;
+  my $section = $self->MM::subdirs;
+  if ($^O =~ /MSWin32/i) {
+    $section =~ s|(cd \.\.)(\s*$)|$1/..$2|m;
+  }
+  return $section;
+}
+
+sub MY::ppd {                                                                                       
+  my $self = shift;
+  my $section = $self->MM::ppd;
+  if ($^O =~ /MSWin32/i) {
+    $section =~ s|Test-More|Test::More|m;
+  }
+  return $section;
+}
+
 
 WriteMakefile(
     clean => { 'FILES'    => 'CPICTRC* ./.rfc_cache/* ./examples/.rfc_cache/* ./examples/*.trc ./examples/CPICTRC* *.inl *.trc testconn ./examples/testconn *~ core test*.txt *.tar.gz *.i *.ii' },
@@ -60,6 +78,7 @@ WriteMakefile(
               'COMPRESS'        => 'gzip -9f',
             'SUFFIX'    => '.tgz'},
 		'DIR' => [ 'lib/SAPNW' ],
+		'PREREQ_PM' => { 'YAML' => 0, 'Test::More' => 0 },
     'AUTHOR' => 'Piers Harding <piers@cpan.org>',
     'ABSTRACT' => 'sapnwrfc - SAP Netweaver RFC support for Perl',
     'VERSION_FROM'    => 'sapnwrfc.pm',
