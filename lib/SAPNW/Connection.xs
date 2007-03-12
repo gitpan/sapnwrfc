@@ -54,6 +54,8 @@ typedef enum { false, true } mybool;
 
 typedef struct SAPNW_CONN_INFO_rec {
                   RFC_CONNECTION_HANDLE handle; 
+                  RFC_CONNECTION_PARAMETER * loginParams;
+                  unsigned loginParamsLength;
 									/*
 									unsigned refs;
 									*/
@@ -72,6 +74,8 @@ typedef struct SAPNW_FUNC_rec {
                   RFC_FUNCTION_HANDLE handle; 
 									SAPNW_FUNC_DESC * desc_handle;
 } SAPNW_FUNC;
+
+HV* hv_global_server_functions;
 
 
 static SV* get_field_value(DATA_CONTAINER_HANDLE hcont, RFC_FIELD_DESC fieldDesc);
@@ -226,12 +230,14 @@ SV*  SAPNWRFC_connect(SV* sv_self){
 	SAPNW_CONN_INFO *hptr;
 	RFC_CONNECTION_PARAMETER * loginParams;
 	int idx, i;
+  bool server;
+
 
 	Newxz(hptr, 1, SAPNW_CONN_INFO);
 	hptr->handle = NULL;
 
   h_self =  (HV*)SvRV( sv_self );
-  sv_config = *hv_fetch(h_self, (char *) "CONFIG", 6, FALSE);
+  sv_config = *hv_fetch(h_self, (char *) "config", 6, FALSE);
   h_config =  (HV*)SvRV(sv_config);
   idx = hv_iterinit(h_config);
 
@@ -242,20 +248,31 @@ SV*  SAPNWRFC_connect(SV* sv_self){
 	loginParams = malloc(idx*sizeof(RFC_CONNECTION_PARAMETER));
 	memset(loginParams, 0,idx*sizeof(RFC_CONNECTION_PARAMETER)); 
 
+  server = false;
 	for (i = 0; i < idx; i++) {
      h_entry = hv_iternext( h_config );
      sv_key = hv_iterkeysv( h_entry );
      sv_value = hv_iterval(h_config, h_entry);
+     if (strcmp(sv_pv(sv_key), "tpname") == 0)
+       server = true;
      loginParams[i].name = (SAP_UC *) u8to16(sv_key);
      loginParams[i].value = (SAP_UC *) u8to16(sv_value);
   }
+  if (server) {
+    hptr->handle = RfcRegisterServer(loginParams, idx, &errorInfo);
+    hptr->loginParams = loginParams;
+    hptr->loginParamsLength = idx;
+  } else {
+    hptr->handle = RfcOpenConnection(loginParams, idx, &errorInfo);
+  };
 
-	hptr->handle = RfcOpenConnection(loginParams, idx, &errorInfo);
-	for (i = 0; i < idx; i++) {
-     free((char *) loginParams[i].name);
-     free((char *) loginParams[i].value);
+  if (! server || hptr->handle == NULL) {
+	  for (i = 0; i < idx; i++) {
+       free((char *) loginParams[i].name);
+       free((char *) loginParams[i].value);
+    }
+	  free(loginParams);
   }
-	free(loginParams);
 	if (hptr->handle == NULL) {
 	  croak("RFC connection open failed: %d / %s / %s\n",
 	                       errorInfo.code, 
@@ -265,13 +282,12 @@ SV*  SAPNWRFC_connect(SV* sv_self){
   //fprintf(stderr, "Created conn_handle: %p - %p\n", hptr, hptr->handle);
 
   sv_handle = newSViv(PTR2IV(hptr));
-	if (hv_exists(h_self, (char *) "HANDLE", 6)) {
+	if (hv_exists(h_self, (char *) "handle", 6)) {
 	  //fprintf(stderr, "deleting HANDLE\n");
-	  hv_delete(h_self, (char *) "HANDLE", 6, 0);
+	  hv_delete(h_self, (char *) "handle", 6, 0);
 	}
-	//hv_store(h_self, (char *) "HANDLE", 6, sv_handle, 0);
 	SvREFCNT_inc(sv_handle);
-	hv_store_ent(h_self, newSVpv("HANDLE", 0), sv_handle, 0);
+	hv_store_ent(h_self, newSVpv("handle", 0), sv_handle, 0);
   return newSViv(1);
 }
 
@@ -286,8 +302,8 @@ SV*  SAPNWRFC_disconnect(SV* sv_self){
   SV* sv_handle;
 
   h_self =  (HV*)SvRV( sv_self );
-	if (hv_exists(h_self, (char *) "HANDLE", 6)) {
-    sv_handle = *hv_fetch(h_self, (char *) "HANDLE", 6, FALSE);
+	if (hv_exists(h_self, (char *) "handle", 6)) {
+    sv_handle = *hv_fetch(h_self, (char *) "handle", 6, FALSE);
 	  if (SvTRUE(sv_handle)) {
 	    hptr = INT2PTR(SAPNW_CONN_INFO *, SvIV(sv_handle));
       //fprintf(stderr, "Disconnect conn_handle: %p - %p\n", hptr, hptr->handle);
@@ -296,7 +312,7 @@ SV*  SAPNWRFC_disconnect(SV* sv_self){
       if (rc != RFC_OK) {
 	    	hptr->handle = NULL;
 		  	free(hptr);
-	      hv_delete(h_self, (char *) "HANDLE", 6, 0);
+	      hv_delete(h_self, (char *) "handle", 6, 0);
 	      croak("Problem closing RFC connection handle: %d / %s / %s\n",
 	                           errorInfo.code, 
 		      									 sv_pv(u16to8(errorInfo.key)), 
@@ -305,9 +321,9 @@ SV*  SAPNWRFC_disconnect(SV* sv_self){
 	    } else {
 	    	hptr->handle = NULL;
 		  	free(hptr);
-	      hv_store(h_self, (char *) "HANDLE", 6, &PL_sv_undef, 0);
+	      hv_store(h_self, (char *) "handle", 6, &PL_sv_undef, 0);
 			  //fprintf(stderr, "Happy on close\n");
-	      hv_delete(h_self, (char *) "HANDLE", 6, 0);
+	      hv_delete(h_self, (char *) "handle", 6, 0);
         return newSViv(1);
     	}
   	} else {
@@ -334,9 +350,9 @@ SV* SAPNWRFC_connection_attributes(SV* sv_self){
   /* fprintf(stderr, "in connection_attributes\n"); */
 
   h_self =  (HV*)SvRV( sv_self );
-	if (! hv_exists(h_self, (char *) "HANDLE", 6))
+	if (! hv_exists(h_self, (char *) "handle", 6))
 		     return(&PL_sv_undef);
-  sv_handle = *hv_fetch(h_self, (char *) "HANDLE", 6, FALSE);
+  sv_handle = *hv_fetch(h_self, (char *) "handle", 6, FALSE);
 	if (! SvTRUE(sv_handle))
 		     return(&PL_sv_undef);
 
@@ -416,6 +432,478 @@ static void add_parameter_call (SV* sv_descriptor, SV* sv_parmName, SV* sv_direc
 }
 
 
+SV* accept_global_callback (SV* sv_global_callback, SV* sv_attribs) {
+	 unsigned count;
+	 SV* sv_value;
+
+   dSP;
+   // initial the argument stack
+   ENTER;
+   SAVETMPS;
+   PUSHMARK(SP);
+
+	 XPUSHs(sv_global_callback);
+	 XPUSHs(sv_2mortal(sv_attribs));
+
+	 PUTBACK;
+
+   count = perl_call_pv("SAPNW::Connection::handler", G_EVAL | G_SCALAR );
+
+	 if(SvTRUE(ERRSV)) {
+	   croak("callback SAPNW::Connection::handler - failed: %s", SvPV(ERRSV,PL_na));
+	 }
+
+	 SPAGAIN;
+
+	 if (count != 1)
+	   croak("Big problem in SAPNW::Connection::handler call\n");
+   sv_value = newSVsv(POPs);
+
+   PUTBACK;
+   FREETMPS;
+   LEAVE;
+
+   return sv_value;
+}
+
+
+/* Disconnect from an SAP system */
+SV* SAPNWRFC_accept(SV* sv_self, SV* sv_wait, SV* sv_global_callback){
+
+	RFC_RC rc = RFC_OK;
+  RFC_ERROR_INFO errorInfo;
+  SAPNW_CONN_INFO *hptr;
+	SV* sv_result;
+  HV* h_self;
+  SV* sv_handle;
+
+  h_self =  (HV*)SvRV( sv_self );
+	if (! hv_exists(h_self, (char *) "handle", 6))
+		     return(&PL_sv_undef);
+  sv_handle = *hv_fetch(h_self, (char *) "handle", 6, FALSE);
+	if (! SvTRUE(sv_handle))
+		     return(&PL_sv_undef);
+
+  hptr = INT2PTR(SAPNW_CONN_INFO *, SvIV(sv_handle));
+
+
+	if(SvTYPE(sv_wait) != SVt_IV)
+		croak("wait value for server.accept must be a FIXNUM type\n");
+
+	while(RFC_OK == rc || RFC_RETRY == rc || RFC_ABAP_EXCEPTION == rc){
+		rc = RfcListenAndDispatch(hptr->handle, SvIV(sv_wait), &errorInfo);
+
+    /* jump out of the accept loop on command */
+		if (rc == RFC_CLOSED) {
+		  break;
+		}
+
+		switch (rc){
+			case RFC_RETRY:	// This only notifies us, that no request came in within the timeout period.
+							// We just continue our loop.
+				break;
+			case RFC_NOT_FOUND:	// R/3 tried to invoke a function module, for which we did not supply
+								// an implementation. R/3 has been notified of this through a SYSTEM_FAILURE,
+								// so we need to refresh our connection.
+			case RFC_ABAP_MESSAGE:		// And in this case a fresh connection is needed as well
+				hptr->handle = RfcRegisterServer(hptr->loginParams, hptr->loginParamsLength, &errorInfo);
+				rc = errorInfo.code;
+				break;
+			case RFC_ABAP_EXCEPTION:	// Our function module implementation has returned RFC_ABAP_EXCEPTION.
+								// This is equivalent to an ABAP function module throwing an ABAP Exception.
+								// The Exception has been returned to R/3 and our connection is still open.
+								// So we just loop around.
+				break;
+			case RFC_OK:
+			  break;
+		  default:
+		    fprintf(stderr, "This return code is not implemented (%d) - abort\n", rc);
+			  exit(1);
+		    break;
+		}
+
+		/* invoke the global callback */
+	  sv_result = accept_global_callback(sv_global_callback, SAPNWRFC_connection_attributes(sv_self));
+	  if (! SvTRUE(sv_result)) {
+	    /* the callback has asked for termination */
+	 	  break;
+	  }
+	}
+	
+
+  return newSViv(1);
+}
+
+
+/* Disconnect from an SAP system */
+SV* SAPNWRFC_process(SV* sv_self, SV* sv_wait){
+
+	RFC_RC rc = RFC_OK;
+  RFC_ERROR_INFO errorInfo;
+  SAPNW_CONN_INFO *hptr;
+  HV* h_self;
+  SV* sv_handle;
+
+  h_self =  (HV*)SvRV( sv_self );
+	if (! hv_exists(h_self, (char *) "handle", 6))
+		     return(&PL_sv_undef);
+  sv_handle = *hv_fetch(h_self, (char *) "handle", 6, FALSE);
+	if (! SvTRUE(sv_handle))
+		     return(&PL_sv_undef);
+
+  hptr = INT2PTR(SAPNW_CONN_INFO *, SvIV(sv_handle));
+
+
+	if(SvTYPE(sv_wait) != SVt_IV)
+		croak("wait value for server.process must be a FIXNUM type\n");
+
+	rc = RfcListenAndDispatch(hptr->handle, SvIV(sv_wait), &errorInfo);
+
+  /* jump out of the accept loop on command */
+	if (rc == RFC_CLOSED) {
+	  return newSViv(rc);
+	}
+
+	switch (rc){
+		case RFC_RETRY:	// This only notifies us, that no request came in within the timeout period.
+						// We just continue our loop.
+			break;
+		case RFC_NOT_FOUND:	// R/3 tried to invoke a function module, for which we did not supply
+							// an implementation. R/3 has been notified of this through a SYSTEM_FAILURE,
+							// so we need to refresh our connection.
+		case RFC_ABAP_MESSAGE:		// And in this case a fresh connection is needed as well
+			hptr->handle = RfcRegisterServer(hptr->loginParams, hptr->loginParamsLength, &errorInfo);
+			//rc = errorInfo.code;
+			break;
+		case RFC_ABAP_EXCEPTION:	// Our function module implementation has returned RFC_ABAP_EXCEPTION.
+							// This is equivalent to an ABAP function module throwing an ABAP Exception.
+							// The Exception has been returned to R/3 and our connection is still open.
+							// So we just loop around.
+			break;
+		case RFC_OK:
+		  break;
+	  default:
+	    fprintf(stderr, "This return code is not implemented (%d) - abort\n", rc);
+		  exit(1);
+	    break;
+	}
+
+  return newSViv(rc);
+}
+
+
+/* allocate a new RFC_FIELD_DESC to be subsequently used in types, structures, and parameters */
+RFC_FIELD_DESC * SAPNW_alloc_field(SAP_UC * name, RFCTYPE type, unsigned nucLength, unsigned nucOffset, unsigned ucLength, unsigned ucOffset, unsigned decimals, RFC_TYPE_DESC_HANDLE typeDescHandle, void* extendedDescription) {
+
+	RFC_FIELD_DESC * fieldDesc;
+	SAP_UC * useless_void;
+
+	fieldDesc = malloc(sizeof(RFC_FIELD_DESC));
+	memset(fieldDesc, 0,sizeof(RFC_FIELD_DESC)); 
+
+	useless_void = memcpyU(fieldDesc->name, name, (size_t)strlenU(name));
+	fieldDesc->type = type;
+	fieldDesc->nucLength = nucLength;
+	fieldDesc->nucOffset = nucOffset;
+	fieldDesc->ucLength = ucLength;
+	fieldDesc->ucOffset = ucOffset;
+	fieldDesc->decimals = decimals;
+	fieldDesc->typeDescHandle = typeDescHandle;
+	fieldDesc->extendedDescription = extendedDescription;
+
+  return fieldDesc;
+}
+
+
+/* allocate a new RFC_PARAMETER-DESC to be subsequently used in an interface description */
+RFC_TYPE_DESC_HANDLE SAPNW_alloc_type(SAP_UC * name) {
+
+	RFC_TYPE_DESC_HANDLE typeDesc;
+  RFC_ERROR_INFO errorInfo;
+
+	typeDesc = RfcCreateTypeDesc(name, &errorInfo);
+
+  /* bail on a bad return code */
+  if (typeDesc == NULL) {
+		croak("Problem RfcCreateTypeDesc (%s): %d / %s / %s\n",
+		                     sv_pv(u16to8(name)),
+	                       errorInfo.code, 
+		   									 sv_pv(u16to8(errorInfo.key)), 
+		   									 sv_pv(u16to8(errorInfo.message)));
+	}
+
+  return typeDesc;
+}
+
+
+/* allocate a new RFC_PARAMETER-DESC to be subsequently used in an interface description */
+RFC_TYPE_DESC_HANDLE SAPNW_build_type(SV* sv_name, SV* sv_fields) {
+
+	RFC_TYPE_DESC_HANDLE typeDesc;
+	RFC_TYPE_DESC_HANDLE field_type_desc;
+	SAP_UC * pname;
+	SAP_UC * pfname;
+  RFC_ERROR_INFO errorInfo;
+  RFC_RC rc = RFC_OK;
+	unsigned i, fidx, off, uoff;
+	SV* sv_field; 
+	SV* sv_fname; 
+	SV* sv_ftype; 
+	SV* sv_flen; 
+	SV* sv_fulen; 
+	SV* sv_fdecimals; 
+	SV* sv_type_name; 
+	SV* sv_type_fields; 
+	SV* sv_ptypedef;
+	RFC_ABAP_NAME abap_name;
+	AV* av_fields;
+	HV* hv_field;
+	HV* hv_ptypedef;
+
+	typeDesc = SAPNW_alloc_type((pname = u8to16(sv_name)));
+	free(pname);
+	RfcGetTypeName(typeDesc, abap_name, &errorInfo);
+	fprintfU(stderr, cU("creating type: %s\n"), abap_name);
+
+  off = 0;
+	uoff = 0;
+
+  av_fields =  (AV*)SvRV( sv_fields );
+	if(SvTYPE(av_fields) != SVt_PVAV)
+	  croak("fields in build_type not an ARRAY: %s\n", sv_pv(sv_name));
+
+	//fprintf(stderr, "Have %d fields\n", (int) RARRAY(fields)->len);
+	fidx = av_len(av_fields);
+	for (i = 0; i <= fidx; i++) {
+	  sv_field = *av_fetch(av_fields, i, FALSE);
+    hv_field =  (HV*)SvRV(sv_field);
+	  if(SvTYPE(hv_field) != SVt_PVHV)
+	    croak("build_type (%s): not a HASH\n", sv_pv(sv_name));
+
+    sv_fname = *hv_fetch(hv_field, (char *) "name", 4, FALSE);
+    sv_ftype = *hv_fetch(hv_field, (char *) "type", 4, FALSE);
+    sv_flen = *hv_fetch(hv_field, (char *) "len", 3, FALSE);
+    sv_fulen = *hv_fetch(hv_field, (char *) "ulen", 4, FALSE);
+    sv_fdecimals = *hv_fetch(hv_field, (char *) "decimals", 8, FALSE);
+	  fprintf(stderr, "got field vals: %s len: %d ulen: %d dec: %d\n", sv_pv(sv_fname), (int) SvIV(sv_flen), (int) SvIV(sv_fulen), (int) SvIV(sv_fdecimals));
+	  if (SvIV(sv_ftype) == RFCTYPE_STRUCTURE ||
+	      SvIV(sv_ftype) == RFCTYPE_TABLE) {
+			//fprintf(stderr, "Field has complex type\n");
+      sv_ptypedef = *hv_fetch(hv_field, (char *) "typedef", 7, FALSE);
+			if (! SvTRUE(sv_ptypedef)) {
+			  fprintf(stderr, "Field does not have typedef - %s\n", sv_pv(sv_fname));
+				exit(1);
+			}
+
+      hv_ptypedef =  (HV*)SvRV( sv_ptypedef );
+	    if (! hv_exists(hv_ptypedef, (char *) "fields", 6))
+		     croak("typedef does not have fields: %s\n", sv_pv(sv_fname));
+      sv_type_name = *hv_fetch(hv_ptypedef, (char *) "name", 4, FALSE);
+      sv_type_fields = *hv_fetch(hv_ptypedef, (char *) "fields", 6, FALSE);
+			if (! SvTRUE(sv_type_fields)) {
+			  fprintf(stderr, "Field (%s) does not have @fields - %s\n", sv_pv(sv_fname), sv_pv(sv_type_name));
+				exit(1);
+			}
+      field_type_desc = SAPNW_build_type(sv_type_name, sv_type_fields);
+		  //fprintf(stderr, "created the type\n");
+	    rc = RfcAddTypeField(typeDesc, SAPNW_alloc_field((pfname = u8to16(sv_fname)),
+		                       SvIV(sv_ftype), SvIV(sv_flen), off, SvIV(sv_fulen), 
+			  									 uoff, SvIV(sv_fdecimals), field_type_desc, NULL), &errorInfo);
+	  } else {
+	    rc = RfcAddTypeField(typeDesc, SAPNW_alloc_field((pfname = u8to16(sv_fname)),
+		                       SvIV(sv_ftype), SvIV(sv_flen), off, SvIV(sv_fulen), 
+			  									 uoff, SvIV(sv_fdecimals), NULL, NULL), &errorInfo);
+		}
+		free(pfname);
+    if (rc != RFC_OK) {
+		  croak("Problem RfcAddTypefield (%s): %d / %s / %s\n",
+		                     sv_pv(sv_name),
+	                       errorInfo.code, 
+		   									 sv_pv(u16to8(errorInfo.key)), 
+		   									 sv_pv(u16to8(errorInfo.message)));
+    }
+		off += SvIV(sv_flen);
+		uoff += SvIV(sv_fulen);
+	}
+
+	//fprintf(stderr, "Finished the fields - total: %d - %d\n", off, uoff);
+
+	rc = RfcSetTypeLength(typeDesc, off, uoff, &errorInfo);
+  if (rc != RFC_OK) {
+	  croak("Problem RfcSetTypeLength (%s): %d / %s / %s\n",
+		                     sv_pv(sv_name),
+	                       errorInfo.code, 
+		   									 sv_pv(u16to8(errorInfo.key)), 
+		   									 sv_pv(u16to8(errorInfo.message)));
+	}
+
+	//fprintf(stderr, "finished type desc\n");
+  return typeDesc;
+}
+
+
+/* allocate a new RFC_PARAMETER-DESC to be subsequently used in an interface description */
+RFC_PARAMETER_DESC * SAPNW_alloc_parameter(SAP_UC * name, RFCTYPE type, RFC_DIRECTION direction, unsigned nucLength, unsigned ucLength, unsigned decimals, RFC_TYPE_DESC_HANDLE typeDescHandle, void* extendedDescription) {
+
+	RFC_PARAMETER_DESC * parameterDesc;
+	SAP_UC * useless_void;
+
+	parameterDesc = malloc(sizeof(RFC_PARAMETER_DESC));
+	memset(parameterDesc, 0,sizeof(RFC_PARAMETER_DESC)); 
+
+	useless_void = memcpyU(parameterDesc->name, name, (size_t)strlenU(name));
+	parameterDesc->type = type;
+	parameterDesc->direction = direction;
+	parameterDesc->nucLength = nucLength;
+	parameterDesc->ucLength = ucLength;
+	parameterDesc->decimals = decimals;
+	parameterDesc->typeDescHandle = typeDescHandle;
+	parameterDesc->extendedDescription = extendedDescription;
+
+  return parameterDesc;
+}
+
+
+/* Create a Function Module handle to be used for an RFC call */
+SV* SAPNWRFC_add_parameter(SV* sv_self, SV* sv_parameter){
+
+	SAPNW_FUNC_DESC *dptr;
+  RFC_RC rc = RFC_OK;
+  RFC_ERROR_INFO errorInfo;
+	SV* sv_name;
+	SV* sv_type;
+	SV* sv_direction;
+	SV* sv_nucLength;
+	SV* sv_ucLength;
+	SV* sv_decimals;
+	SV* sv_fields;
+	SV* sv_ptypedef;
+	SV* sv_type_name;
+	SAP_UC * pname;
+  RFC_PARAMETER_DESC * parm_desc;
+	RFC_TYPE_DESC_HANDLE type_desc;
+  HV* h_self;
+  HV* hv_parameter;
+  HV* hv_ptypedef;
+  SV* sv_func_def;
+
+
+  h_self =  (HV*)SvRV( sv_self );
+	if (hv_exists(h_self, (char *) "funcdef", 7)) {
+    sv_func_def = *hv_fetch(h_self, (char *) "funcdef", 7, FALSE);
+	  if (SvTRUE(sv_func_def)) {
+	    dptr = INT2PTR(SAPNW_FUNC_DESC *, SvIV(sv_func_def));
+  	} else {
+	    croak("Corrupt function descriptor pointer in add_parameter\n");
+		}
+	} else {
+	  croak("Non-existent function descriptor pointer in add_parameter\n");
+	}
+
+  /* register parameter definition */
+  hv_parameter =  (HV*)SvRV(sv_parameter);
+	if(SvTYPE(hv_parameter) != SVt_PVHV)
+	  croak("sv_parameter in add_parameter: not a HASH\n");
+  sv_name = *hv_fetch(hv_parameter, (char *) "name", 4, FALSE);
+  sv_type = *hv_fetch(hv_parameter, (char *) "type", 4, FALSE);
+  sv_direction = *hv_fetch(hv_parameter, (char *) "direction", 9, FALSE);
+  sv_nucLength = *hv_fetch(hv_parameter, (char *) "len", 3, FALSE);
+  sv_ucLength = *hv_fetch(hv_parameter, (char *) "ulen", 4, FALSE);
+  sv_decimals = *hv_fetch(hv_parameter, (char *) "decimals", 8, FALSE);
+	//fprintf(stderr, "Got parameter: %s\n", StringValueCStr(name));
+	//fprintf(stderr, "Got parameter: %s - type: %d\n", StringValueCStr(name), (int) NUM2INT(type));
+	if (SvIV(sv_type) == RFCTYPE_STRUCTURE ||
+	    SvIV(sv_type) == RFCTYPE_TABLE) {
+    sv_ptypedef = *hv_fetch(hv_parameter, (char *) "typedef", 7, FALSE);
+    hv_ptypedef =  (HV*)SvRV(sv_ptypedef);
+	  if(SvTYPE(hv_ptypedef) != SVt_PVHV)
+	    croak("sv_ptypedef in add_parameter: not a HASH\n");
+    sv_type_name = *hv_fetch(hv_ptypedef, (char *) "name", 4, FALSE);
+    sv_fields = *hv_fetch(hv_ptypedef, (char *) "fields", 6, FALSE);
+	  type_desc = SAPNW_build_type(sv_type_name, sv_fields);
+
+		//fprintf(stderr, "created the type\n");
+    parm_desc = SAPNW_alloc_parameter((pname = u8to16(sv_name)), SvIV(sv_type), SvIV(sv_direction), 0, 0, 0, type_desc, NULL);
+	} else {
+    parm_desc = SAPNW_alloc_parameter((pname = u8to16(sv_name)), SvIV(sv_type), SvIV(sv_direction), SvIV(sv_nucLength), SvIV(sv_ucLength), SvIV(sv_decimals), NULL, NULL);
+	}
+	free(pname);
+  rc = RfcAddParameter(dptr->handle, parm_desc, &errorInfo);
+  if (rc != RFC_OK) {
+	  croak("Problem with RfcAddParameter (%s): %d / %s / %s\n",
+		                     sv_pv(sv_name),
+	                       errorInfo.code, 
+		   									 sv_pv(u16to8(errorInfo.key)), 
+		   									 sv_pv(u16to8(errorInfo.message)));
+  }
+
+
+	SvREFCNT_inc(sv_parameter);
+  return sv_parameter;
+}
+
+
+/* Get the Metadata description of a Function Module */
+SV * SAPNWRFC_create_function_descriptor(SV * sv_func){
+
+	SAPNW_FUNC_DESC *dptr;
+	RFC_RC rc = RFC_OK;
+  RFC_ERROR_INFO errorInfo;
+	SV * sv_function_def;
+	SV * sv_descriptor;
+	HV* h_func_def;
+	HV* h_parameters;
+	SAP_UC * fname;
+	RFC_FUNCTION_DESC_HANDLE func_desc_handle;
+	RFC_ABAP_NAME func_name;
+
+	func_desc_handle = RfcCreateFunctionDesc((fname = u8to16(sv_func)), &errorInfo);
+	free((char *)fname);
+
+  /* bail on a bad lookup */
+  if (func_desc_handle == NULL) {
+	  croak("Problem with RfcCreateFunctionDesc (%s): %d / %s / %s\n",
+		                   sv_pv(sv_func),
+	                     errorInfo.code, 
+											 sv_pv(u16to8(errorInfo.key)), 
+		 									 sv_pv(u16to8(errorInfo.message)));
+	}
+
+	Newxz(dptr, 1, SAPNW_FUNC_DESC);
+	dptr->handle = func_desc_handle;
+	dptr->conn_handle = NULL;
+	/*
+	dptr->refs = 0;
+	dptr->conn_handle->refs ++;
+	*/
+	dptr->name = make_strdup(sv_func);
+  sv_function_def = newSViv(PTR2IV(dptr));
+
+
+  /* read back the function name */
+	rc = RfcGetFunctionName(dptr->handle, func_name, &errorInfo);
+
+  /* bail on a bad RfcGetFunctionName */
+  if (rc != RFC_OK) {
+	  croak("(FunctionDescriptor create)Problem in RfcGetFunctionName (%s): %d / %s / %s\n",
+		                   sv_pv(sv_func),
+	                     errorInfo.code, 
+											 sv_pv(u16to8(errorInfo.key)), 
+		 									 sv_pv(u16to8(errorInfo.message)));
+	}
+
+	h_func_def = newHV();
+	hv_store_ent(h_func_def, newSVpv("funcdef", 0), SvREFCNT_inc(sv_function_def), 0);
+	hv_store_ent(h_func_def, newSVpv("name", 0), u16to8(func_name), 0);
+	h_parameters = newHV();
+	hv_store_ent(h_func_def, newSVpv("parameters", 0),  newRV_noinc( (SV*) h_parameters), 0);
+  sv_descriptor = sv_bless(newRV_noinc((SV *) h_func_def),
+	                         gv_stashpv("SAPNW::RFC::FunctionDescriptor", 0));
+
+  return sv_descriptor;
+}
+
+
 /* Get the Metadata description of a Function Module */
 SV * SAPNWRFC_function_lookup(SV * sv_self, SV * sv_func){
 
@@ -439,8 +927,8 @@ SV * SAPNWRFC_function_lookup(SV * sv_self, SV * sv_func){
 
 
   h_self =  (HV*)SvRV( sv_self );
-	if (hv_exists(h_self, (char *) "HANDLE", 6)) {
-    sv_handle = *hv_fetch(h_self, (char *) "HANDLE", 6, FALSE);
+	if (hv_exists(h_self, (char *) "handle", 6)) {
+    sv_handle = *hv_fetch(h_self, (char *) "handle", 6, FALSE);
 	  if (SvTRUE(sv_handle)) {
 	    hptr = INT2PTR(SAPNW_CONN_INFO *, SvIV(sv_handle));
   	} else {
@@ -488,10 +976,10 @@ SV * SAPNWRFC_function_lookup(SV * sv_self, SV * sv_func){
 	}
 
 	h_func_def = newHV();
-	SvREFCNT_inc(sv_function_def);
-	hv_store_ent(h_func_def, newSVpv("FUNCDEF", 0), SvREFCNT_inc(sv_function_def), 0);
+	//SvREFCNT_inc(sv_function_def);
+	hv_store_ent(h_func_def, newSVpv("funcdef", 0), SvREFCNT_inc(sv_function_def), 0);
 	/* fprintf(stderr, "FUNCDEF in lookup: %d\n", SvIV(sv_function_def)); */
-	hv_store_ent(h_func_def, newSVpv("NAME", 0), u16to8(func_name), 0);
+	hv_store_ent(h_func_def, newSVpv("name", 0), u16to8(func_name), 0);
  
   /* Get the parameter details */
 	rc = RfcGetParameterCount(dptr->handle, &parm_count, &errorInfo);
@@ -507,7 +995,7 @@ SV * SAPNWRFC_function_lookup(SV * sv_self, SV * sv_func){
 
   /* fprintf(stderr, "number of parameters: %d\n", parm_count); */
 	h_parameters = newHV();
-	hv_store_ent(h_func_def, newSVpv("PARAMETERS", 0),  newRV_noinc( (SV*) h_parameters), 0);
+	hv_store_ent(h_func_def, newSVpv("parameters", 0),  newRV_noinc( (SV*) h_parameters), 0);
 
   sv_descriptor = sv_bless(newRV_noinc((SV *) h_func_def),
 	                         gv_stashpv("SAPNW::RFC::FunctionDescriptor", 0));
@@ -546,8 +1034,8 @@ SV * SAPNWRFC_destroy_function_descriptor(SV* sv_self){
 
   /* fprintf(stderr, "func_desc_handle_free: -> start\n"); */
   h_self =  (HV*)SvRV( sv_self );
-	if (hv_exists(h_self, (char *) "FUNCDEF", 7)) {
-    sv_func_def = *hv_fetch(h_self, (char *) "FUNCDEF", 7, FALSE);
+	if (hv_exists(h_self, (char *) "funcdef", 7)) {
+    sv_func_def = *hv_fetch(h_self, (char *) "funcdef", 7, FALSE);
 	  if (SvTRUE(sv_func_def)) {
 		  /* fprintf(stderr, "FUNCDEF in destroy: %d\n", SvIV(sv_func_def)); */
 	    dptr = INT2PTR(SAPNW_FUNC_DESC *, SvIV(sv_func_def));
@@ -631,8 +1119,8 @@ SV * SAPNWRFC_create_function_call(SV* sv_func_desc){
 
   /* fprintf(stderr, "in handle create_function\n"); */
   h_self =  (HV*)SvRV( sv_func_desc );
-	if (hv_exists(h_self, (char *) "FUNCDEF", 7)) {
-    sv_func_def = *hv_fetch(h_self, (char *) "FUNCDEF", 7, FALSE);
+	if (hv_exists(h_self, (char *) "funcdef", 7)) {
+    sv_func_def = *hv_fetch(h_self, (char *) "funcdef", 7, FALSE);
 	  if (SvTRUE(sv_func_def)) {
 	    dptr = INT2PTR(SAPNW_FUNC_DESC *, SvIV(sv_func_def));
   	} else {
@@ -662,8 +1150,8 @@ SV * SAPNWRFC_create_function_call(SV* sv_func_desc){
 	h_func_call = newHV();
 	SvREFCNT_inc(sv_function);
 	/* fprintf(stderr, "FUNCCALL in create_call: %d\n", SvIV(sv_function)); */
-	hv_store_ent(h_func_call, newSVpv("FUNCCALL", 0), sv_function, 0);
-	hv_store_ent(h_func_call, newSVpv("NAME", 0), SvREFCNT_inc(newSVpv(dptr->name, 0)), 0);
+	hv_store_ent(h_func_call, newSVpv("funccall", 0), sv_function, 0);
+	hv_store_ent(h_func_call, newSVpv("name", 0), SvREFCNT_inc(newSVpv(dptr->name, 0)), 0);
   sv_func_call = sv_bless(newRV_noinc((SV *) h_func_call),
 	                         gv_stashpv("SAPNW::RFC::FunctionCall", 0));
 	/*
@@ -687,8 +1175,8 @@ SV * SAPNWRFC_destroy_function_call(SV* sv_self){
 
   /* fprintf(stderr, "func_call_handle_free: -> start\n"); */
   h_self =  (HV*)SvRV( sv_self );
-	if (hv_exists(h_self, (char *) "FUNCCALL", 8)) {
-    sv_function = *hv_fetch(h_self, (char *) "FUNCCALL", 8, FALSE);
+	if (hv_exists(h_self, (char *) "funccall", 8)) {
+    sv_function = *hv_fetch(h_self, (char *) "funccall", 8, FALSE);
 	  if (SvTRUE(sv_function)) {
 		  /* fprintf(stderr, "FUNCCALL in destroy: %d\n", SvIV(sv_function)); */
 	    fptr = INT2PTR(SAPNW_FUNC *, SvIV(sv_function));
@@ -1890,8 +2378,8 @@ SV * SAPNWRFC_set_parameter_active(SV* sv_func_call, SV* sv_name, SV* sv_active)
 	SV* sv_pointer;
 
   h_self =  (HV*)SvRV( sv_func_call );
-	if (hv_exists(h_self, (char *) "FUNCCALL", 8)) {
-    sv_pointer = *hv_fetch(h_self, (char *) "FUNCCALL", 8, FALSE);
+	if (hv_exists(h_self, (char *) "funccall", 8)) {
+    sv_pointer = *hv_fetch(h_self, (char *) "funccall", 8, FALSE);
 	  if (SvTRUE(sv_pointer)) {
 	    fptr = INT2PTR(SAPNW_FUNC *, SvIV(sv_pointer));
   	} else {
@@ -1955,6 +2443,350 @@ SV* parameter_attrib (SV* sv_self, char * attrib, SV* sv_set_value) {
 }
 
 
+SV* callback_make_empty_function_call (SV* sv_function) {
+	 unsigned count;
+	 SV* sv_value;
+
+   dSP;
+   // initial the argument stack
+   ENTER;
+   SAVETMPS;
+   PUSHMARK(SP);
+
+	 XPUSHs(sv_function);
+
+	 PUTBACK;
+
+   count = perl_call_pv("SAPNW::RFC::FunctionDescriptor::make_empty_function_call", G_EVAL | G_SCALAR );
+
+	 if(SvTRUE(ERRSV)) {
+	   croak("callback SAPNW::RFC::FunctionDescriptor::make_empty_function_call - failed: %s", SvPV(ERRSV,PL_na));
+	 }
+
+	 SPAGAIN;
+
+	 if (count != 1)
+	   croak("Big problem in SAPNW::RFC::FunctionDescriptor::make_empty_function_call call\n");
+   sv_value = newSVsv(POPs);
+
+   PUTBACK;
+   FREETMPS;
+   LEAVE;
+
+   return sv_value;
+}
+
+
+SV* function_callback (SV* sv_function, SV* sv_fcall) {
+	 unsigned count;
+	 SV* sv_value;
+
+   dSP;
+   // initial the argument stack
+   ENTER;
+   SAVETMPS;
+   PUSHMARK(SP);
+
+	 XPUSHs(sv_function);
+	 XPUSHs(sv_fcall);
+
+	 PUTBACK;
+
+   count = perl_call_pv("SAPNW::Connection::main_handler", G_EVAL | G_SCALAR );
+
+	 if(SvTRUE(ERRSV)) {
+	   croak("callback SAPNW::Connection::main_handler - failed: %s", SvPV(ERRSV,PL_na));
+	 }
+
+	 SPAGAIN;
+
+	 if (count != 1)
+	   croak("Big problem in SAPNW::Connection::main_handler call\n");
+   sv_value = newSVsv(POPs);
+
+   PUTBACK;
+   FREETMPS;
+   LEAVE;
+
+   return sv_value;
+}
+
+
+
+RFC_RC SAP_API SAPNW_function_callback(RFC_CONNECTION_HANDLE rfcHandle, RFC_FUNCTION_HANDLE funcHandle, RFC_ERROR_INFO* errorInfoP){
+
+  RFC_RC rc = RFC_OK;
+  RFC_ERROR_INFO errorInfo;
+	RFC_FUNCTION_DESC_HANDLE func_desc_handle;
+	RFC_ABAP_NAME func_name;
+	SAPNW_FUNC_DESC *dptr;
+	SAPNW_FUNC *fptr;
+	SV* sv_parameters;
+	SV* sv_function;
+	SV* sv_fcall;
+	SV* sv_parm;
+	SV* sv_name;
+	SV* sv_func_name;
+	SV* sv_value;
+	SV* sv_row;
+	SV* sv_result;
+	SV* sv_ecode;
+	SV* sv_ekey;
+	SV* sv_emessage;
+	HV* hv_fcall;
+	HV* hv_parameters;
+	HV* hv_error;
+	HE* he_entry;
+	AV* av_value;
+	SAP_UC *p_name;
+	SAP_UC *pkey;
+	SAP_UC *pmessage;
+	SAP_UC *useless_void;
+	unsigned i, r, idx, tidx;
+	unsigned tabLen;
+	RFC_TABLE_HANDLE tableHandle;
+	RFC_STRUCTURE_HANDLE line;
+
+  /* find out what Function Call this is */
+	func_desc_handle = RfcDescribeFunction(funcHandle, &errorInfo);
+  if (func_desc_handle == NULL) {
+	  croak("Problem with RfcDescribeFunction: %d / %s / %s\n",
+	                     errorInfo.code, 
+											 sv_pv(u16to8(errorInfo.key)), 
+		 									 sv_pv(u16to8(errorInfo.message)));
+	}
+
+
+	Newxz(dptr, 1, SAPNW_FUNC_DESC);
+	dptr->handle = func_desc_handle;
+	dptr->conn_handle = NULL;
+
+	rc = RfcGetFunctionName(dptr->handle, func_name, &errorInfo);
+  if (rc != RFC_OK) {
+	  croak("Problem with RfcGetFunctionName (%s): %d / %s / %s\n",
+		                   sv_pv(u16to8(func_name)),
+	                     errorInfo.code, 
+											 sv_pv(u16to8(errorInfo.key)), 
+		 									 sv_pv(u16to8(errorInfo.message)));
+	}
+
+	/* create a function call container to pass into the all back */
+  sv_func_name = u16to8(func_name);
+  sv_function = *hv_fetch(hv_global_server_functions, sv_pv(sv_func_name), SvCUR(sv_func_name), FALSE);
+	if (!SvTRUE(sv_function)) {
+	   /* we dont know this function - so error */
+     dptr->handle = NULL;
+     free(dptr);
+		 return RFC_NOT_FOUND;
+	}
+
+	Newxz(fptr, 1, SAPNW_FUNC);
+	fptr->handle = funcHandle;
+	fptr->desc_handle = dptr;
+
+	/* XXX must test that we got one */
+  sv_fcall = callback_make_empty_function_call(sv_function);
+  hv_fcall =  (HV*)SvRV( sv_fcall );
+	hv_store_ent(hv_fcall, newSVpv("name", 0), sv_func_name, 0);
+
+
+	/* unpick all the parameters ready for Ruby callback */
+  sv_parameters = *hv_fetch(hv_fcall, (char *) "parameters", 10, FALSE);
+  hv_parameters =  (HV*)SvRV(sv_parameters);
+
+	if(SvTYPE(hv_parameters) != SVt_PVHV)
+	  croak("callback: parameters not a HASH\n");
+
+  idx = hv_iterinit(hv_parameters);
+
+	for (i = 0; i < idx; i++) {
+     he_entry = hv_iternext(hv_parameters);
+     sv_name = hv_iterkeysv( he_entry );
+     sv_parm = hv_iterval(hv_parameters, he_entry);
+	   switch(SvIV(parameter_attrib(sv_parm, "direction", &PL_sv_undef))) {
+     	 case RFC_IMPORT:
+			   break;
+     	 case RFC_EXPORT:
+     	 case RFC_CHANGING:
+				 sv_value = get_parameter_value(sv_name, fptr);
+			   parameter_attrib(sv_parm, "value", sv_value);
+			   break;
+     	 case RFC_TABLES:
+         rc = RfcGetTable(fptr->handle, (p_name = u8to16(sv_name)), &tableHandle, &errorInfo);
+         if (rc != RFC_OK) {
+	        fptr->desc_handle = NULL;
+         	fptr->handle = NULL;
+         	free(fptr);
+	         croak("(get)Problem with RfcGetTable (%s): %d / %s / %s\n",
+		                   sv_pv(sv_name),
+	                     errorInfo.code, 
+											 sv_pv(u16to8(errorInfo.key)), 
+		 									 sv_pv(u16to8(errorInfo.message)));
+       	 }
+				 rc = RfcGetRowCount(tableHandle, &tabLen, NULL);
+         if (rc != RFC_OK) {
+	        fptr->desc_handle = NULL;
+         	fptr->handle = NULL;
+         	free(fptr);
+	         croak("(get)Problem with RfcGetRowCount (%s): %d / %s / %s\n",
+		                   sv_pv(sv_name),
+	                     errorInfo.code, 
+											 sv_pv(u16to8(errorInfo.key)), 
+		 									 sv_pv(u16to8(errorInfo.message)));
+       	 }
+				 av_value = newAV();
+         for (r = 0; r < tabLen; r++){
+	         RfcMoveTo(tableHandle, r, NULL);
+			     line = RfcGetCurrentRow(tableHandle, NULL);
+		       av_push(av_value, get_table_line(line));
+				 }
+				 free(p_name);
+			   parameter_attrib(sv_parm, "value", newRV_noinc((SV*)av_value));
+			   break;
+		 }
+  }
+  
+  /* do Ruby callback */
+   sv_result = function_callback(sv_function, sv_fcall);
+	 if (!SvTRUE(sv_result)) {
+	   /* the callback has asked for termination */
+     dptr->handle = NULL;
+     free(dptr);
+		 return RFC_CLOSED;
+	 } else {
+	   /* check for an error thrown - pass it on to RFC stack ... */
+     hv_error =  (HV*)SvRV(sv_result);
+	   if(SvTYPE(hv_error) == SVt_PVHV) {
+       sv_ecode = *hv_fetch(hv_error, (char *) "code", 4, FALSE);
+       sv_ekey = *hv_fetch(hv_error, (char *) "key", 3, FALSE);
+       sv_emessage = *hv_fetch(hv_error, (char *) "message", 7, FALSE);
+       errorInfoP->code = RFC_ABAP_EXCEPTION;
+       errorInfoP->group = SvIV(sv_ecode);
+       pkey = u8to16(sv_ekey);
+       useless_void = memcpyU(errorInfoP->key, pkey, (size_t)strlenU(pkey));
+       free(pkey);
+       pmessage = u8to16(sv_emessage);
+       useless_void = memcpyU(errorInfoP->message, pmessage, (size_t)strlenU(pmessage));
+       free(pmessage);
+		   return RFC_ABAP_EXCEPTION;
+		 }
+	 }
+
+
+	/* repack all the parameters */
+  idx = hv_iterinit(hv_parameters);
+	for (i = 0; i < idx; i++) {
+     he_entry = hv_iternext( hv_parameters );
+     sv_name = hv_iterkeysv( he_entry );
+     sv_parm = hv_iterval(hv_parameters, he_entry);
+
+	   switch(SvIV(parameter_attrib(sv_parm, "direction", &PL_sv_undef))) {
+     	 case RFC_EXPORT:
+			   break;
+     	 case RFC_IMPORT:
+			 case RFC_CHANGING:
+			   sv_value = parameter_attrib(sv_parm, "value", &PL_sv_undef);
+				 set_parameter_value(fptr, sv_name, sv_value);
+			   break;
+     	 case RFC_TABLES:
+			   sv_value = parameter_attrib(sv_parm, "value", &PL_sv_undef);
+				 if (! SvTRUE(sv_value))
+				   continue;
+         av_value =  (AV*)SvRV(sv_value);
+	       if(SvTYPE(av_value) != SVt_PVAV)
+	         croak("invoke outbound parameter (%s): not an ARRAY\n", SvPV(sv_name, SvCUR(sv_name)));
+         rc = RfcGetTable(fptr->handle, (p_name = u8to16(sv_name)), &tableHandle, &errorInfo);
+         if (rc != RFC_OK) {
+	        fptr->desc_handle = NULL;
+         	fptr->handle = NULL;
+         	free(fptr);
+	         croak("(set)Problem with RfcGetTable (%s): %d / %s / %s\n",
+		                   sv_pv(sv_name),
+	                     errorInfo.code, 
+											 sv_pv(u16to8(errorInfo.key)), 
+		 									 sv_pv(u16to8(errorInfo.message)));
+       	 }
+	       tidx = av_len(av_value);
+	       for (r = 0; r <= tidx; r++) {
+	         sv_row = *av_fetch(av_value, r, FALSE);
+					 line = RfcAppendNewRow(tableHandle, &errorInfo);
+           if (line == NULL) {
+	           fptr->desc_handle = NULL;
+         	   fptr->handle = NULL;
+         	   free(fptr);
+	           croak("(set)Problem with RfcAppendNewRow (%s): %d / %s / %s\n",
+		                   sv_pv(sv_name),
+	                     errorInfo.code, 
+											 sv_pv(u16to8(errorInfo.key)), 
+		 									 sv_pv(u16to8(errorInfo.message)));
+         	 }
+					 set_table_line(line, sv_row);
+				 }
+				 av_undef(av_value);
+
+				 free(p_name);
+			   break;
+     	 default:
+			    fprintf(stderr, "should get here!\n");
+					exit(1);
+			   break;
+		 }
+  }
+
+	/* send it home */
+	sv_2mortal(sv_fcall);
+	fptr->desc_handle = NULL;
+	fptr->handle = NULL;
+	free(fptr);
+	FREETMPS;
+  return RFC_OK;
+}
+
+
+/* install a RFC Server function */
+SV* SAPNWRFC_install(SV* sv_self, SV* sv_sysid){
+
+  RFC_RC rc = RFC_OK;
+	SAPNW_FUNC_DESC *dptr;
+  RFC_ERROR_INFO errorInfo;
+	SAP_UC * psysid;
+  HV* h_self;
+	SV* sv_func_def;
+
+  h_self =  (HV*)SvRV( sv_self );
+	if (hv_exists(h_self, (char *) "funcdef", 7)) {
+    sv_func_def = *hv_fetch(h_self, (char *) "funcdef", 7, FALSE);
+	  if (SvTRUE(sv_func_def)) {
+	    dptr = INT2PTR(SAPNW_FUNC_DESC *, SvIV(sv_func_def));
+  	} else {
+	    croak("Corrupt function descriptor pointer in add_parameter\n");
+		}
+	} else {
+	  croak("Non-existent function descriptor pointer in add_parameter\n");
+	}
+
+	rc = RfcInstallServerFunction((psysid = u8to16(sv_sysid)), dptr->handle, SAPNW_function_callback, &errorInfo);
+	free(psysid);
+
+  /* bail on a bad lookup */
+  if (rc != RFC_OK) {
+	  croak("Problem with RfcInstallServerFunction (%s): %d / %s / %s\n",
+		                   dptr->name,
+	                     errorInfo.code, 
+											 sv_pv(u16to8(errorInfo.key)), 
+		 									 sv_pv(u16to8(errorInfo.message)));
+	}
+
+  /* store a global pointer the the func desc for the function call back */
+  if (hv_global_server_functions == NULL) {
+    hv_global_server_functions = newHV();
+	}
+	SvREFCNT_inc(sv_self);
+	hv_store_ent(hv_global_server_functions, newSVpv(dptr->name, 0), sv_self, 0);
+
+  return newSViv(1);
+}
+
 
 /* Create a Function Module handle to be used for an RFC call */
 SV * SAPNWRFC_invoke(SV* sv_func_call){
@@ -1983,8 +2815,8 @@ SV * SAPNWRFC_invoke(SV* sv_func_call){
 
   /* fprintf(stderr, "in handle create_function\n"); */
   h_self =  (HV*)SvRV( sv_func_call );
-	if (hv_exists(h_self, (char *) "FUNCCALL", 8)) {
-    sv_function = *hv_fetch(h_self, (char *) "FUNCCALL", 8, FALSE);
+	if (hv_exists(h_self, (char *) "funccall", 8)) {
+    sv_function = *hv_fetch(h_self, (char *) "funccall", 8, FALSE);
 	  if (SvTRUE(sv_function)) {
 	    fptr = INT2PTR(SAPNW_FUNC *, SvIV(sv_function));
   	} else {
@@ -2000,7 +2832,7 @@ SV * SAPNWRFC_invoke(SV* sv_func_call){
 
 	/* loop through all Input/Changing/tables parameters and set the values in the call */
 
-  sv_parameters = *hv_fetch(h_self, (char *) "PARAMETERS", 10, FALSE);
+  sv_parameters = *hv_fetch(h_self, (char *) "parameters", 10, FALSE);
   h_parameters =  (HV*)SvRV(sv_parameters);
 
 	if(SvTYPE(h_parameters) != SVt_PVHV)
@@ -2152,12 +2984,21 @@ SAPNWRFC_destroy_function_descriptor (sv_self)
 	SV *	sv_self
 
 SV *
+SAPNWRFC_destroy_function_call (sv_self)
+	SV *	sv_self
+
+SV *
 SAPNWRFC_create_function_call (sv_func_desc)
 	SV *	sv_func_desc
 
 SV *
-SAPNWRFC_destroy_function_call (sv_self)
+SAPNWRFC_create_function_descriptor (sv_func)
+	SV *	sv_func
+
+SV *
+SAPNWRFC_add_parameter (sv_self, sv_parameter)
 	SV *	sv_self
+	SV *	sv_parameter
 
 SV *
 SAPNWRFC_set_parameter_active (sv_func_call, sv_name, sv_active)
@@ -2168,4 +3009,20 @@ SAPNWRFC_set_parameter_active (sv_func_call, sv_name, sv_active)
 SV *
 SAPNWRFC_invoke (sv_func_call)
 	SV *	sv_func_call
+
+SV *
+SAPNWRFC_accept (sv_self, sv_wait, sv_global_callback)
+	SV *	sv_self
+	SV *	sv_wait
+	SV *	sv_global_callback
+
+SV *
+SAPNWRFC_process (sv_self, sv_wait)
+	SV *	sv_self
+	SV *	sv_wait
+
+SV *
+SAPNWRFC_install (sv_self, sv_sysid)
+	SV *	sv_self
+	SV *	sv_sysid
 

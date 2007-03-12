@@ -39,6 +39,33 @@ package SAPNW::Base;
   use constant RFCTYPE_XSTRING => 30;
   use constant RFCTYPE_EXCEPTION => 98;
 
+  use constant RFC_OK => 0;
+  use constant RFC_COMMUNICATION_FAILURE => 1;
+  use constant RFC_LOGON_FAILURE => 2;
+  use constant RFC_ABAP_RUNTIME_FAILURE => 3;
+  use constant RFC_ABAP_MESSAGE => 4;
+  use constant RFC_ABAP_EXCEPTION => 5;
+  use constant RFC_CLOSED => 6;
+  use constant RFC_CANCELED => 7;
+  use constant RFC_TIMEOUT => 8;
+  use constant RFC_MEMORY_INSUFFICIENT => 9;
+  use constant RFC_VERSION_MISMATCH => 10;
+  use constant RFC_INVALID_PROTOCOL => 11;
+  use constant RFC_SERIALIZATION_FAILURE => 12;
+  use constant RFC_INVALID_HANDLE => 13;
+  use constant RFC_RETRY => 14;
+  use constant RFC_EXTERNAL_FAILURE => 15;
+  use constant RFC_EXECUTED => 16;
+  use constant RFC_NOT_FOUND => 17;
+  use constant RFC_NOT_SUPPORTED => 18;
+  use constant RFC_ILLEGAL_STATE => 19;
+  use constant RFC_INVALID_PARAMETER => 20;
+  use constant RFC_CODEPAGE_CONVERSION_FAILURE => 21;
+  use constant RFC_CONVERSION_FAILURE => 22;
+  use constant RFC_BUFFER_TOO_SMALL => 23;
+  use constant RFC_TABLE_MOVE_BOF => 24;
+  use constant RFC_TABLE_MOVE_EOF => 25;
+
 
   # Export useful tools
   my @export_ok = qw(
@@ -66,6 +93,33 @@ package SAPNW::Base;
    RFCTYPE_STRING
    RFCTYPE_XSTRING
    RFCTYPE_EXCEPTION
+   RFC_OK
+   RFC_COMMUNICATION_FAILURE
+   RFC_LOGON_FAILURE
+   RFC_ABAP_RUNTIME_FAILURE
+   RFC_ABAP_MESSAGE
+   RFC_ABAP_EXCEPTION
+   RFC_CLOSED
+   RFC_CANCELED
+   RFC_TIMEOUT
+   RFC_MEMORY_INSUFFICIENT
+   RFC_VERSION_MISMATCH
+   RFC_INVALID_PROTOCOL
+   RFC_SERIALIZATION_FAILURE
+   RFC_INVALID_HANDLE
+   RFC_RETRY
+   RFC_EXTERNAL_FAILURE
+   RFC_EXECUTED
+   RFC_NOT_FOUND
+   RFC_NOT_SUPPORTED
+   RFC_ILLEGAL_STATE
+   RFC_INVALID_PARAMETER
+   RFC_CODEPAGE_CONVERSION_FAILURE
+   RFC_CONVERSION_FAILURE
+   RFC_BUFFER_TOO_SMALL
+   RFC_TABLE_MOVE_BOF
+   RFC_TABLE_MOVE_EOF
+	 Dumper
 	);
 
   sub import {

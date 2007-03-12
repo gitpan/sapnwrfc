@@ -7,6 +7,7 @@ package SAPNW::Rfc;
 =cut
 use SAPNW::Base;
 use base qw(SAPNW::Base);
+use Data::Dumper;
 
 
 =pod
@@ -50,14 +51,28 @@ sub load_config {
 }
 
 
-# Construct a new SAP::Rfc Object.
 sub rfc_connect {
   my @keys = ();
   my $proto = shift;
   my $class = ref($proto) || $proto;
   my @rest = @_;
   
-  my $config = { map { $_ => $SAPNW_RFC_CONFIG->{$_} } keys %$SAPNW_RFC_CONFIG, @rest };
+  my $config = { (map { $_ => $SAPNW_RFC_CONFIG->{$_} } (grep {$_ !~ /tpname|gwhost|gwserv/i } (keys %$SAPNW_RFC_CONFIG))), @rest };
+	my $conn = new SAPNW::Connection(%{$config});
+
+  $conn->connect();
+  return $conn;
+}
+
+
+sub rfc_register {
+  my @keys = ();
+  my $proto = shift;
+  my $class = ref($proto) || $proto;
+  my @rest = @_;
+  
+  my $config = { (map { $_ => $SAPNW_RFC_CONFIG->{$_} } (grep {$_ =~ /tpname|gwhost|gwserv|debug|trace/i } (keys %$SAPNW_RFC_CONFIG))), @rest };
+	debug("config passed on: ".Dumper($config));
 	my $conn = new SAPNW::Connection(%{$config});
 
   $conn->connect();

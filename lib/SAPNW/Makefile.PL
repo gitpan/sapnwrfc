@@ -131,7 +131,7 @@ if($^O =~ /Win32/) {
     }
 
     $SEP = "\\";
-    $LIBS = ' -l'.$candidate->[2];
+    $LIBS = ' -l'.$candidate->[2].' -llibsapucum';
 } else {
     $RFC_LIB = "-L".$RFC_DIR."/lib";
     $SEP = "/";

@@ -30,11 +30,10 @@ package SAPNW::Connection;
     my $class = ref($proto) || $proto;
     my @rest = @_;
     my $self = {
-       INTERFACES => {},
-       CONFIG => { @rest },
-       HANDLE => undef
+       interfaces => {},
+       config => { @rest },
+       handle => undef
     };
-    #debug("Conecction Config is: ".Dumper($self->{CONFIG}));
     bless($self, $class);
     return $self;
 	}
@@ -42,20 +41,59 @@ package SAPNW::Connection;
 
 	sub config {
 	  my $self = shift;
-		return $self->{CONFIG};
+		return $self->{config};
 	}
 
 
 	sub interfaces {
 	  my $self = shift;
-		return $self->{INTERFACES};
+		return $self->{interfaces};
 	}
+
+
+	sub installFunction {
+	  my $self = shift;
+		my ($func, $sysid) = @_;
+		die "must be passed a Function Descriptor\n" unless
+		  ref($func) eq "SAPNW::RFC::FunctionDescriptor";
+		$sysid ||= "";
+    return SAPNW::Connection::install($func, $sysid);
+	}
+
+
+sub handler {
+
+  my $handler = shift;
+  my $attrib = shift;
+
+  my $result = "";
+  eval { $result = &$handler($attrib); };
+	$result = $@ if $@;
+	debug("global callback result: $result");
+  return $result;
+
+}
+
+
+sub main_handler {
+
+  my $func = shift;
+  my $fcall = shift;
+	my $handler = $func->callback;
+  my $result = "";
+  eval { $result = &$handler($fcall); };
+	$result = $@ if $@;
+	debug("function callback result: $result");
+  return $result;
+
+}
+
 
 
 # Tidy up open Connection when DESTROY Destructor Called
 sub DESTROY {
     my $self = shift;
-    $self->disconnect() if exists $self->{HANDLE} && defined($self->{HANDLE});
+    $self->disconnect() if exists $self->{handle} && defined($self->{handle});
 }
 
 1;

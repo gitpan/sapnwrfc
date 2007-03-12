@@ -9,7 +9,6 @@ use strict;
 
 use SAPNW::Base;
 use base qw(SAPNW::Base);
-use Data::Dumper;
 
 use vars qw($VERSION $AUTOLOAD);
 $VERSION = '0.02';
@@ -24,8 +23,8 @@ $VERSION = '0.02';
     $name =~ s/.*://;
 
 #   Autoload parameters and tables
-    if ( exists $self->{PARAMETERS}->{$name} ) {
-       return $self->{PARAMETERS}->{$name}->value(@_);
+    if ( exists $self->{parameters}->{$name} ) {
+       return $self->{parameters}->{$name}->value(@_);
     } else {
         die "Parameter $name does not exist in Interface - no autoload";
     };
@@ -39,33 +38,52 @@ $VERSION = '0.02';
 
 	sub name {
 	  my $self = shift;
-		return $self->{NAME};
+		return $self->{name};
+	}
+
+
+  sub new {
+    my $proto = shift;
+    my $class = ref($proto) || $proto;
+	  my $funcdesc = shift;
+		die "Must pass a FunctionDescriptor \n" unless ref($funcdesc) eq "SAPNW::RFC::FunctionDescriptor";
+    my $self = {
+       name => $funcdesc->name,
+			 parameters => {},
+    };
+    foreach my $p (values %{$funcdesc->parameters}) {
+      my $type = ref($p);
+			no strict 'refs';
+			# my ($funcdesc, $name, $type, $len, $ulen, $decimals, $direction) = @_;
+			my $np = &{$type."::new"}($type, 'name', $p->name, 'type', $p->type, 'len', $p->len, 'ulen', $p->ulen, 'decimals', $p->decimals, 'direction', $p->direction);
+      $self->{parameters}->{$np->name} = $np;
+		}
+    bless($self, $class);
+    return $self;
 	}
 
 
   sub initialise {
 	  my $self = shift;
 	  my $funcdesc = shift;
-		$self->{PARAMETERS} = {};
-		#debug("initialise: ".Dumper($self));
+		$self->{parameters} = {};
     foreach my $p (values %{$funcdesc->parameters}) {
       my $type = ref($p);
 			no strict 'refs';
 			# my ($funcdesc, $name, $type, $len, $ulen, $decimals, $direction) = @_;
-			my $np = &{$type."::new"}($type, $p->name, $p->type, $p->len, $p->ulen, $p->decimals, $p->direction);
-      $self->{PARAMETERS}->{$np->name} = $np;
+			my $np = &{$type."::new"}($type, 'name', $p->name, 'type', $p->type, 'len', $p->len, 'ulen', $p->ulen, 'decimals', $p->decimals, 'direction', $p->direction);
+      $self->{parameters}->{$np->name} = $np;
 		}
     return $self;
 	}
 
 	sub parameters {
 	  my $self = shift;
-		return $self->{PARAMETERS};
+		return $self->{parameters};
 	}
 
 	sub invoke {
 	  my $self = shift;
-		#return $self->{CONN}->invoke($self);
 		return SAPNW::Connection::invoke($self);
   }
 
