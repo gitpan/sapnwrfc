@@ -1,3 +1,5 @@
+use 5.008;
+# you must - repeat MUST have Perl 5.8 or greater !!!!
 use ExtUtils::MakeMaker;
 use Getopt::Long;
 use vars qw($opt_source $opt_addlibs $opt_embed_manifest $opt_help);
