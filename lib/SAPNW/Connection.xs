@@ -233,7 +233,8 @@ SV*  SAPNWRFC_connect(SV* sv_self){
   bool server;
 
 
-	Newxz(hptr, 1, SAPNW_CONN_INFO);
+	//Newxz(hptr, 1, SAPNW_CONN_INFO);
+	hptr = malloc(sizeof(SAPNW_CONN_INFO));
 	hptr->handle = NULL;
 
   h_self =  (HV*)SvRV( sv_self );
@@ -869,7 +870,8 @@ SV * SAPNWRFC_create_function_descriptor(SV * sv_func){
 		 									 sv_pv(u16to8(errorInfo.message)));
 	}
 
-	Newxz(dptr, 1, SAPNW_FUNC_DESC);
+	//Newxz(dptr, 1, SAPNW_FUNC_DESC);
+	dptr = malloc(sizeof(SAPNW_FUNC_DESC));
 	dptr->handle = func_desc_handle;
 	dptr->conn_handle = NULL;
 	/*
@@ -952,7 +954,8 @@ SV * SAPNWRFC_function_lookup(SV * sv_self, SV * sv_func){
 	  //return(&PL_sv_undef);
 	}
 
-	Newxz(dptr, 1, SAPNW_FUNC_DESC);
+	//Newxz(dptr, 1, SAPNW_FUNC_DESC);
+	dptr = malloc(sizeof(SAPNW_FUNC_DESC));
 	dptr->handle = func_desc_handle;
 	dptr->conn_handle = hptr;
 	/*
@@ -1142,7 +1145,8 @@ SV * SAPNWRFC_create_function_call(SV* sv_func_desc){
 	}
 
   /* wrap in SAPNW::RFC::FunctionCall  Object */
-	Newxz(fptr, 1, SAPNW_FUNC);
+	//Newxz(fptr, 1, SAPNW_FUNC);
+	fptr = malloc(sizeof(SAPNW_FUNC));
 	fptr->handle = func_handle;
 	fptr->desc_handle = dptr;
   sv_function = newSViv(PTR2IV(fptr));
@@ -2557,7 +2561,8 @@ RFC_RC SAP_API SAPNW_function_callback(RFC_CONNECTION_HANDLE rfcHandle, RFC_FUNC
 	}
 
 
-	Newxz(dptr, 1, SAPNW_FUNC_DESC);
+	//Newxz(dptr, 1, SAPNW_FUNC_DESC);
+	dptr = malloc(sizeof(SAPNW_FUNC_DESC));
 	dptr->handle = func_desc_handle;
 	dptr->conn_handle = NULL;
 
@@ -2580,7 +2585,8 @@ RFC_RC SAP_API SAPNW_function_callback(RFC_CONNECTION_HANDLE rfcHandle, RFC_FUNC
 		 return RFC_NOT_FOUND;
 	}
 
-	Newxz(fptr, 1, SAPNW_FUNC);
+	//Newxz(fptr, 1, SAPNW_FUNC);
+	fptr = malloc(sizeof(SAPNW_FUNC));
 	fptr->handle = funcHandle;
 	fptr->desc_handle = dptr;
 
