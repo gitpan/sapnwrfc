@@ -80,6 +80,8 @@ HV* hv_global_server_functions;
 
 static SV* get_field_value(DATA_CONTAINER_HANDLE hcont, RFC_FIELD_DESC fieldDesc);
 void set_field_value(DATA_CONTAINER_HANDLE hcont, RFC_FIELD_DESC fieldDesc, SV* sv_value);
+SV * get_table_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name);
+void set_table_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name, SV* sv_value);
 
 
 
@@ -1550,6 +1552,9 @@ SV * get_structure_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name){
 SV * get_field_value(DATA_CONTAINER_HANDLE hcont, RFC_FIELD_DESC fieldDesc){
 
   SV* sv_pvalue;
+  RFC_RC rc = RFC_OK;
+  RFC_ERROR_INFO errorInfo;
+	RFC_TABLE_HANDLE tableHandle;
 
   sv_pvalue = &PL_sv_undef;
   switch (fieldDesc.type) {
@@ -1587,8 +1592,15 @@ SV * get_field_value(DATA_CONTAINER_HANDLE hcont, RFC_FIELD_DESC fieldDesc){
 		  sv_pvalue = get_structure_value(hcont, fieldDesc.name);
 		  break;
     case RFCTYPE_TABLE:
-		  fprintf(stderr, "(get field) shouldnt get a table type parameter - abort\n");
-			exit(1);
+      rc = RfcGetTable(hcont, fieldDesc.name, &tableHandle, &errorInfo);
+      if (rc != RFC_OK) {
+    	  croak("Problem with RfcGetTable (%s): %d / %s / %s\n",
+		                   sv_pv(u16to8(fieldDesc.name)),
+	                     errorInfo.code, 
+											 sv_pv(u16to8(errorInfo.key)), 
+		 									 sv_pv(u16to8(errorInfo.message)));
+     	}
+		  sv_pvalue = get_table_value(tableHandle, fieldDesc.name);
 		  break;
     case RFCTYPE_XMLDATA:
 		  fprintf(stderr, "shouldnt get a XMLDATA type parameter - abort\n");
@@ -1653,24 +1665,15 @@ SV * get_table_line(RFC_STRUCTURE_HANDLE line){
 }
 
 
-SV * get_table_value(SAPNW_FUNC *fptr, DATA_CONTAINER_HANDLE hcont, SAP_UC *name){
+SV * get_table_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name){
 
   RFC_RC rc = RFC_OK;
   RFC_ERROR_INFO errorInfo;
 	unsigned tabLen, r;
-	RFC_TABLE_HANDLE tableHandle;
 	RFC_STRUCTURE_HANDLE line;
 	AV* av_val;
 
-  rc = RfcGetTable(fptr->handle, name, &tableHandle, &errorInfo);
-  if (rc != RFC_OK) {
-	  croak("Problem with RfcGetTable (%s): %d / %s / %s\n",
-		                   sv_pv(u16to8(name)),
-	                     errorInfo.code, 
-											 sv_pv(u16to8(errorInfo.key)), 
-		 									 sv_pv(u16to8(errorInfo.message)));
- 	}
-	rc = RfcGetRowCount(tableHandle, &tabLen, NULL);
+	rc = RfcGetRowCount(hcont, &tabLen, NULL);
   if (rc != RFC_OK) {
 	  croak("Problem with RfcGetRowCount (%s): %d / %s / %s\n",
 		                   sv_pv(u16to8(name)),
@@ -1680,8 +1683,8 @@ SV * get_table_value(SAPNW_FUNC *fptr, DATA_CONTAINER_HANDLE hcont, SAP_UC *name
   }
 	av_val = newAV();
   for (r = 0; r < tabLen; r++){
-	  RfcMoveTo(tableHandle, r, NULL);
-	  line = RfcGetCurrentRow(tableHandle, NULL);
+	  RfcMoveTo(hcont, r, NULL);
+	  line = RfcGetCurrentRow(hcont, NULL);
 		av_push(av_val, get_table_line(line));
 	}
 
@@ -1696,6 +1699,7 @@ SV * get_parameter_value(SV* sv_name, SAPNW_FUNC *fptr){
   RFC_RC rc = RFC_OK;
   RFC_ERROR_INFO errorInfo;
   RFC_PARAMETER_DESC paramDesc;
+	RFC_TABLE_HANDLE tableHandle;
 	SAP_UC *p_name;
   SV* sv_pvalue;
 
@@ -1751,7 +1755,15 @@ SV * get_parameter_value(SV* sv_name, SAPNW_FUNC *fptr){
 		  sv_pvalue = get_structure_value(fptr->handle, p_name);
 		  break;
     case RFCTYPE_TABLE:
-		  sv_pvalue = get_table_value(fptr, fptr->handle, p_name);
+      rc = RfcGetTable(fptr->handle, p_name, &tableHandle, &errorInfo);
+      if (rc != RFC_OK) {
+    	  croak("Problem with RfcGetTable (%s): %d / %s / %s\n",
+		                   sv_pv(u16to8(p_name)),
+	                     errorInfo.code, 
+											 sv_pv(u16to8(errorInfo.key)), 
+		 									 sv_pv(u16to8(errorInfo.message)));
+     	}
+		  sv_pvalue = get_table_value(tableHandle, p_name);
 		  break;
     case RFCTYPE_XMLDATA:
 		  fprintf(stderr, "shouldnt get a XMLDATA type parameter - abort\n");
@@ -1932,8 +1944,8 @@ void set_float_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name, SV* sv_value){
   RFC_RC rc = RFC_OK;
   RFC_ERROR_INFO errorInfo;
 
-	if(SvTYPE(sv_value) != SVt_PV)
-	  croak("RfcSetFloat (%s): not a Scalar\n", u16to8(name));
+	if(SvTYPE(sv_value) != SVt_PV && SvTYPE(sv_value) != SVt_IV)
+	  croak("RfcSetFloat (%s): not a Scalar or Int\n", u16to8(name));
   rc = RfcSetFloat(hcont, name, (RFC_FLOAT) SvNV(sv_value), &errorInfo);
   if (rc != RFC_OK) {
 	  croak("Problem with RfcSetFloat (%s): %d / %s / %s\n",
@@ -2104,6 +2116,7 @@ void set_structure_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name, SV* sv_value
      sv_val = hv_iterval(hv_value, h_entry);
 
 	  rc = RfcGetFieldDescByName(typeHandle, (p_name = u8to16(sv_key)), &fieldDesc, &errorInfo);
+		//fprintfU(stderr, cU("Fieldname: %s\n"), fieldDesc.name);
     if (rc != RFC_OK) {
 	    croak("(set)Problem with RfcGetFieldDescByName (%s/%s): %d / %s / %s\n",
 		                   sv_pv(u16to8(name)),
@@ -2123,6 +2136,9 @@ void set_structure_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name, SV* sv_value
 
 
 void set_field_value(DATA_CONTAINER_HANDLE hcont, RFC_FIELD_DESC fieldDesc, SV* sv_value){
+  RFC_RC rc = RFC_OK;
+  RFC_ERROR_INFO errorInfo;
+	RFC_TABLE_HANDLE tableHandle;
 
   switch (fieldDesc.type) {
     case RFCTYPE_DATE:
@@ -2159,8 +2175,15 @@ void set_field_value(DATA_CONTAINER_HANDLE hcont, RFC_FIELD_DESC fieldDesc, SV* 
 		  set_structure_value(hcont, fieldDesc.name, sv_value);
 		  break;
     case RFCTYPE_TABLE:
-		  fprintf(stderr, "shouldnt get a table type parameter - abort\n");
-			exit(1);
+      rc = RfcGetTable(hcont, fieldDesc.name, &tableHandle, &errorInfo);
+      if (rc != RFC_OK) {
+	      croak("(set_tabl_value)Problem with RfcGetTable (%s): %d / %s / %s\n",
+		                   sv_pv(u16to8(fieldDesc.name)),
+	                     errorInfo.code, 
+											 sv_pv(u16to8(errorInfo.key)), 
+		 									 sv_pv(u16to8(errorInfo.message)));
+      }
+		  set_table_value(tableHandle, fieldDesc.name, sv_value);
 		  break;
     case RFCTYPE_XMLDATA:
 		  fprintf(stderr, "shouldnt get a XMLDATA type parameter - abort\n");
@@ -2240,11 +2263,9 @@ void set_table_line(RFC_STRUCTURE_HANDLE line, SV* sv_value){
 }
 
 
-void set_table_value(SAPNW_FUNC *fptr, DATA_CONTAINER_HANDLE hcont, SAP_UC *name, SV* sv_value){
+void set_table_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name, SV* sv_value){
 
-  RFC_RC rc = RFC_OK;
   RFC_ERROR_INFO errorInfo;
-	RFC_TABLE_HANDLE tableHandle;
 	RFC_STRUCTURE_HANDLE line;
 	unsigned r, idx;
 	AV* av_value;
@@ -2254,19 +2275,10 @@ void set_table_value(SAPNW_FUNC *fptr, DATA_CONTAINER_HANDLE hcont, SAP_UC *name
 	if(SvTYPE(av_value) != SVt_PVAV)
 	  croak("set_tabl_value (%s): not an ARRAY\n", u16to8(name));
 
-  rc = RfcGetTable(fptr->handle, name, &tableHandle, &errorInfo);
-  if (rc != RFC_OK) {
-	  croak("(set_tabl_value)Problem with RfcGetTable (%s): %d / %s / %s\n",
-		                   sv_pv(u16to8(name)),
-	                     errorInfo.code, 
-											 sv_pv(u16to8(errorInfo.key)), 
-		 									 sv_pv(u16to8(errorInfo.message)));
-  }
-
 	idx = av_len(av_value);
 	for (r = 0; r <= idx; r++) {
 	  sv_row = *av_fetch(av_value, r, FALSE);
-	  line = RfcAppendNewRow(tableHandle, &errorInfo);
+	  line = RfcAppendNewRow(hcont, &errorInfo);
     if (line == NULL) {
 	    croak("(set_tabl_value)Problem with RfcAppendNewRow (%s): %d / %s / %s\n",
 		                   sv_pv(u16to8(name)),
@@ -2288,6 +2300,7 @@ void set_parameter_value(SAPNW_FUNC *fptr, SV* sv_name, SV* sv_value){
 	SAPNW_FUNC_DESC *dptr;
   RFC_RC rc = RFC_OK;
   RFC_ERROR_INFO errorInfo;
+	RFC_TABLE_HANDLE tableHandle;
   RFC_PARAMETER_DESC paramDesc;
 	SAP_UC *p_name;
 
@@ -2346,7 +2359,15 @@ void set_parameter_value(SAPNW_FUNC *fptr, SV* sv_name, SV* sv_value){
 		  set_structure_value(fptr->handle, p_name, sv_value);
 		  break;
     case RFCTYPE_TABLE:
-		  set_table_value(fptr, fptr->handle, p_name, sv_value);
+      rc = RfcGetTable(fptr->handle, p_name, &tableHandle, &errorInfo);
+      if (rc != RFC_OK) {
+	      croak("(set_tabl_value)Problem with RfcGetTable (%s): %d / %s / %s\n",
+		                   sv_pv(u16to8(p_name)),
+	                     errorInfo.code, 
+											 sv_pv(u16to8(errorInfo.key)), 
+		 									 sv_pv(u16to8(errorInfo.message)));
+      }
+		  set_table_value(tableHandle, p_name, sv_value);
 		  break;
     case RFCTYPE_XMLDATA:
 		  fprintf(stderr, "shouldnt get a XMLDATA type parameter - abort\n");

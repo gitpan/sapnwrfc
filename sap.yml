@@ -3,6 +3,7 @@ sysnr: "01"
 client: "001"
 user: developer
 passwd: developer
+lcheck: 1
 lang: EN
 trace: 2
 debug: 1

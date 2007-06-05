@@ -26,7 +26,7 @@ $EMBED_MANIFEST = 1 if $opt_embed_manifest;
 
 if($^O eq 'MSWin32') {
   $ADD_FLAGS = " -DWIN32";
-  $ADD_FLAGS .= " -D_DEBUG";
+#  $ADD_FLAGS .= " -D_DEBUG";
   $ADD_FLAGS .= " -D_CONSOLE";
   $ADD_FLAGS .= " -DUNICODE";
   $ADD_FLAGS .= " -D_UNICODE";
@@ -35,7 +35,7 @@ if($^O eq 'MSWin32') {
   $ADD_FLAGS .= " -DSAP_PLATFORM_MAKENAME=ntintel ";
 } else {
   #$ADD_FLAGS = " -g -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -m64 -mno-3dnow -fno-strict-aliasing -pipe -fexceptions -funsigned-char -Wall -Wno-uninitialized -Wno-long-long -Wcast-align ";
-  $ADD_FLAGS = " -g -D_LARGEFILE_SOURCE -mno-3dnow -fno-strict-aliasing -pipe -fexceptions -funsigned-char -Wall -Wno-uninitialized -Wno-long-long -Wcast-align ";
+  $ADD_FLAGS = " -D_LARGEFILE_SOURCE -mno-3dnow -fno-strict-aliasing -pipe -fexceptions -funsigned-char -Wall -Wno-uninitialized -Wno-long-long -Wcast-align ";
   $ADD_FLAGS .= " -DSAPwithUNICODE ";
   $ADD_FLAGS .= " -DSAPonUNIX ";
 #  $ADD_FLAGS .= " -DSAP_PLATFORM_MAKENAME=linuxx86_64 ";

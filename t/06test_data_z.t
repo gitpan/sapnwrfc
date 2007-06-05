@@ -5,7 +5,14 @@ BEGIN { use_ok("sapnwrfc"); };
 
 print "Testing SAPNW::Rfc-$SAPNW::Rfc::VERSION\n";
 SAPNW::Rfc->load_config;
-my $conn = SAPNW::Rfc->rfc_connect;
+my $conn;
+eval { $conn = SAPNW::Rfc->rfc_connect; };
+if ($@) {
+  print STDERR "RFC Failure to connect: $@\n";
+	die $@;
+}
+
+
 eval {
 my $fd = $conn->function_lookup("Z_TEST_DATA");
 };

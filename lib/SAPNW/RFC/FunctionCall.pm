@@ -82,6 +82,12 @@ $VERSION = '0.02';
 		return $self->{parameters};
 	}
 
+	sub parameter {
+	  my $self = shift;
+		my $parameter = shift;
+		return exists $self->{parameters}->{$parameter} ? $self->{parameters}->{$parameter} : undef;
+	}
+
 	sub invoke {
 	  my $self = shift;
 		return SAPNW::Connection::invoke($self);
