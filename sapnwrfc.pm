@@ -2,7 +2,7 @@ package sapnwrfc;
 use strict;
 
 use vars qw($VERSION $AUTOLOAD $DEBUG);
-$VERSION = '0.12';
+$VERSION = '0.15';
 
 use SAPNW::Base;
 $SAPNW::Base::DEBUG = 0;
@@ -53,15 +53,15 @@ The next generation RFCSDK from SAP provides a number of interesting new feature
 
 The UNICODE support is built fundamentally into the core of the new SDK, and as a result this is reflected in sapnwrfc. sapnwrfc takes UTF-8 as its only input character set, and handles the translation of this to UTF-16 as required by the RFCSDK.
 
-Deep and complex structures are now supported fully. Please see the test_deep.rb example in tests/ for an idea as to how it works.
+Deep and complex structures are now supported fully. Please see the 08deep_z.t example in the tests (t/*) for an idea as to how it works.
 
 sapnwrfc is a departure to the way the original SAP::Rfc (http://search.cpan.org/search?module=SAP::Rfc) works. It aims to simplify the exchange of native Perl data types between the user application and the connector. This means that the following general rules should be observered, when passing values to and from RFC interface parameters and tables:
 
 =over 4
 
-=item * Tables expect Arrays of Hashes.
+=item * Parameters with structures expect a reference to a hash containing the key/value pairs corresponding to the fields within eg: { 'FLD1' => 'val 1', 'FLD2' => 'val 2', ...}.
 
-=item * Parameters with structures expect Hashes.
+=item * Tables expect a reference to an Array of Hash references - as for structured parameters above, these hashes contain key/value pairs eg: [{ 'FLD1' => 'val 1', 'FLD2' => 'val2' ..}, { 'FLD1' => 'val 1', 'FLD2' => 'val2' ..}, ... ] .
 
 =item * CHAR, DATE, TIME, STRING, XSTRING, and BYTE type parameters expect String values.
 
@@ -70,6 +70,8 @@ sapnwrfc is a departure to the way the original SAP::Rfc (http://search.cpan.org
 =item * all INT types must be Perl ints.
 
 =back
+
+When building a call for client-side RFC, you should always be inspecting the requirements of the RFC call by using transaction SE37 first.  You should also be in the the habit of testing out your RFC calls first using SE37 too.  YOu would be amazed how much this simple approach will save you (and me) time.
 
 
 There are a lot of examples of passing data in and out of the connector in the test suite - please refer to these to gain a better understanding of how to make it work.

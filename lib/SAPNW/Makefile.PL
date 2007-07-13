@@ -173,7 +173,7 @@ WriteMakefile(
     'LINKTYPE'    => 'dynamic',
     'VERSION_FROM'    => 'Connection.pm',
     'NAME'    => 'SAPNW::Connection',
-     DEFINE => "-g -Wall $ADD_FLAGS ",
+     DEFINE => " $ADD_FLAGS ",
 
     'LIBS'      => ["$ADDITIONAL_LIBS $RFC_LIB $LIBS $iconv_lib"],
     'INC'    => "-I".$RFC_INC ." ".$iconv_inc,
