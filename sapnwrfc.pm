@@ -2,7 +2,7 @@ package sapnwrfc;
 use strict;
 
 use vars qw($VERSION $AUTOLOAD $DEBUG);
-$VERSION = '0.15';
+$VERSION = '0.16';
 
 use SAPNW::Base;
 $SAPNW::Base::DEBUG = 0;
@@ -90,6 +90,11 @@ Connection parameters can be either passed into SAPNW::Rfc->rfc_connect() as a h
   debug: 1
 
 Note: if you supply your config via the YAML based file, you can override any or all of those parameters at the time a call is made to SAPNW::Rfc->rfc_connect().
+
+
+=head1 WIN32 Support
+
+When I receive prebuilt PPDs from Olivier (and anyone else who wants to), I make these available at http://www.piersharding.com/download/win32/ .
 
 
 =head1 AUTHOR
