@@ -2,7 +2,7 @@ package sapnwrfc;
 use strict;
 
 use vars qw($VERSION $AUTOLOAD $DEBUG);
-$VERSION = '0.16';
+$VERSION = '0.17';
 
 use SAPNW::Base;
 $SAPNW::Base::DEBUG = 0;

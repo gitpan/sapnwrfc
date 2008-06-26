@@ -2,7 +2,7 @@ package SAPNW::Base;
 
 =pod
 
-    Copyright (c) 2006 - 2007 Piers Harding.
+    Copyright (c) 2006 - 2008 Piers Harding.
         All rights reserved.
 
 =cut

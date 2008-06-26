@@ -392,10 +392,6 @@ SV* SAPNWRFC_connection_attributes(SV* sv_self){
   hv_store_ent(hv_attrib, newSVpv("partnerRel", 0), u16to8(attribs.partnerRel),0);
   hv_store_ent(hv_attrib, newSVpv("kernelRel", 0), u16to8(attribs.kernelRel),0);
   hv_store_ent(hv_attrib, newSVpv("cpicConvId", 0), u16to8(attribs.cpicConvId),0);
-  hv_store_ent(hv_attrib, newSVpv("passwordState", 0), u16to8(attribs.passwordState),0);
-  hv_store_ent(hv_attrib, newSVpv("ownCodepagePcs", 0), u16to8(attribs.ownCodepagePcs),0);
-  hv_store_ent(hv_attrib, newSVpv("pcs", 0), u16to8(attribs.pcs),0);
-  hv_store_ent(hv_attrib, newSVpv("realPartnerCodepage", 0), u16to8(attribs.realPartnerCodepage),0);
   hv_store_ent(hv_attrib, newSVpv("progName", 0), u16to8(attribs.progName),0);
 
   return newRV_noinc((SV *) hv_attrib);
