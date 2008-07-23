@@ -136,7 +136,7 @@ if($^O =~ /Win32/) {
 } else {
     $RFC_LIB = "-L".$RFC_DIR."/lib";
     $SEP = "/";
-    $LIBS = ' -l'.$candidate->[2];
+    $LIBS = ' -l'.$candidate->[2].' -lsapucum';
 }
 
 my $candidate_info = join('; ', @$candidate);

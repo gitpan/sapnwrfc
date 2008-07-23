@@ -91,6 +91,10 @@ right direction:
   that you would put in LDFLAGS.
   By default this is ' -lm -ldl -lpthread '
 
+YOU MUST MAKE SURE THAT YOU ADD THE LIB PATH TO LD_LIBRARY_PATH 
+EG:
+export LD_LIBRARY_PATH=/usr/sap/rfcsdk/lib
+
 
 Example:
 
