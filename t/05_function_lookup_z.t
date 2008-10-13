@@ -1,8 +1,8 @@
 use Test::More;
 use constant ITER => 50;
 
-plan tests => (ITER + (ITER * 4 * 7) + (ITER * 4 * 7) + 3);
-BEGIN { use_ok("sapnwrfc"); };
+plan tests => (ITER + (ITER * 4 * 7) + (ITER * 4 * 7) + 3 + 1);
+use_ok("sapnwrfc");
 
 print "Testing SAPNW::Rfc-$SAPNW::Rfc::VERSION\n";
 SAPNW::Rfc->load_config;

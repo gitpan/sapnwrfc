@@ -1,7 +1,8 @@
 use Test::More;
 use constant ITER => 50;
 use Data::Dumper;
-BEGIN { use_ok("sapnwrfc"); };
+
+use sapnwrfc;
 
 print "Testing SAPNW::Rfc-$SAPNW::Rfc::VERSION\n";
 SAPNW::Rfc->load_config;
@@ -23,7 +24,8 @@ if ($err) {
 	plan skip_all => "You do not have Z_TEST_DATA";
 }
 
-plan tests => (ITER * 34 + ITER * 31 + 3);
+plan tests => (ITER * 34 + ITER * 31 + 3 + 1);
+use_ok("sapnwrfc");
 
 foreach (1..ITER) {
   eval {

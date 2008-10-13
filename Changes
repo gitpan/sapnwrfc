@@ -6,3 +6,6 @@ Fri Jul 13 06:30:32 BST 2007
 
 Thu Jun 26 18:59:57 NZST 2008
   * removed connection attributes that are nolonger supported
+
+Tue Oct 14 06:09:26 NZDT 2008
+  * Fixed test plans - thanks Shane Boyce

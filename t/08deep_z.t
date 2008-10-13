@@ -2,8 +2,8 @@ use Test::More;
 use Data::Dumper;
 use constant ITER => 50;
 
-plan tests => (ITER * 17 + ITER * 12 + 5);
-BEGIN { use_ok("sapnwrfc"); };
+plan tests => (ITER * 17 + ITER * 12 + 5 + 1);
+use_ok("sapnwrfc");
 
 print "Testing SAPNW::Rfc-$SAPNW::Rfc::VERSION\n";
 SAPNW::Rfc->load_config;
