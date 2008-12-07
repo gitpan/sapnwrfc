@@ -1790,7 +1790,7 @@ void set_date_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name, SV* sv_value){
 	RFC_DATE date_value;
 
 	if(SvTYPE(sv_value) != SVt_PV)
-	  croak("RfcSetDate (%s): not a Scalar\n", u16to8(name));
+	  croak("RfcSetDate (%s): not a Scalar\n", sv_pv(u16to8(name)));
 	if (SvCUR(sv_value) != 8)
 	  croak("RfcSetDate invalid date format (%s): %s\n", sv_pv(u16to8(name)), sv_pv(sv_value));
   p_value = u8to16(sv_value);
@@ -1818,7 +1818,7 @@ void set_time_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name, SV* sv_value){
 	RFC_TIME time_value;
 
 	if(SvTYPE(sv_value) != SVt_PV)
-	  croak("RfcSetTime (%s): not a Scalar\n", u16to8(name));
+	  croak("RfcSetTime (%s): not a Scalar\n", sv_pv(u16to8(name)));
 	if (SvCUR(sv_value) != 6)
 	  croak("RfcSetTime invalid input date format (%s): %s\n", sv_pv(u16to8(name)), sv_pv(sv_value));
   p_value = u8to16(sv_value);
@@ -1869,7 +1869,7 @@ void set_bcd_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name, SV* sv_value){
 	SAP_UC *p_value;
 
 	if(SvTYPE(sv_value) != SVt_PV)
-	  croak("set_bcd_value (%s): not a Scalar\n", u16to8(name));
+	  croak("set_bcd_value (%s): not a Scalar\n", sv_pv(u16to8(name)));
   p_value = u8to16(sv_value);
   rc = RfcSetString(hcont, name, p_value, strlenU(p_value), &errorInfo);
   free(p_value);
@@ -1893,7 +1893,7 @@ void set_char_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name, SV* sv_value, uns
 
 
 	if(SvTYPE(sv_value) != SVt_PV)
-	  croak("RfcSetChar (%s): not a Scalar\n", u16to8(name));
+	  croak("RfcSetChar (%s): not a Scalar\n", sv_pv(u16to8(name)));
 	if (SvCUR(sv_value) > max)
 	  croak("RfcSetChar string too long (%s): %s\n", sv_pv(u16to8(name)), sv_pv(sv_value));
 
@@ -1919,7 +1919,7 @@ void set_byte_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name, SV* sv_value, uns
 
 
 	if(SvTYPE(sv_value) != SVt_PV)
-	  croak("RfcSetByte (%s): not a Scalar\n", u16to8(name));
+	  croak("RfcSetByte (%s): not a Scalar\n", sv_pv(u16to8(name)));
 	if (SvCUR(sv_value) > max)
 	  croak("RfcSetByte string too long (%s): %s\n", sv_pv(u16to8(name)), sv_pv(sv_value));
   rc = RfcSetBytes(hcont, name, (SAP_RAW *)SvPV(sv_value, SvCUR(sv_value)), SvCUR(sv_value), &errorInfo);
@@ -1941,7 +1941,7 @@ void set_float_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name, SV* sv_value){
   RFC_ERROR_INFO errorInfo;
 
 	if(SvTYPE(sv_value) != SVt_PV && SvTYPE(sv_value) != SVt_IV)
-	  croak("RfcSetFloat (%s): not a Scalar or Int\n", u16to8(name));
+	  croak("RfcSetFloat (%s): not a Scalar or Int\n", sv_pv(u16to8(name)));
   rc = RfcSetFloat(hcont, name, (RFC_FLOAT) SvNV(sv_value), &errorInfo);
   if (rc != RFC_OK) {
 	  croak("Problem with RfcSetFloat (%s): %d / %s / %s\n",
@@ -1961,7 +1961,7 @@ void set_int_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name, SV* sv_value){
   RFC_ERROR_INFO errorInfo;
 
 	if(SvTYPE(sv_value) != SVt_IV)
-	  croak("RfcSetInt (%s): not an Integer\n", u16to8(name));
+	  croak("RfcSetInt (%s): not an Integer\n", sv_pv(u16to8(name)));
   rc = RfcSetInt(hcont, name, (RFC_INT) SvIV(sv_value), &errorInfo);
   if (rc != RFC_OK) {
 	  croak("Problem with RfcSetInt (%s): %d / %s / %s\n",
@@ -1981,7 +1981,7 @@ void set_int1_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name, SV* sv_value){
   RFC_ERROR_INFO errorInfo;
 
 	if(SvTYPE(sv_value) != SVt_IV)
-	  croak("RfcSetInt1 (%s): not an Integer\n", u16to8(name));
+	  croak("RfcSetInt1 (%s): not an Integer\n", sv_pv(u16to8(name)));
 	if (SvIV(sv_value) > 255)
 	  croak("RfcSetInt1 invalid input value too big on (%s): %s\n", sv_pv(u16to8(name)), sv_pv(sv_value));
   rc = RfcSetInt1(hcont, name, (RFC_INT1) SvIV(sv_value), &errorInfo);
@@ -2003,7 +2003,7 @@ void set_int2_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name, SV* sv_value){
   RFC_ERROR_INFO errorInfo;
 
 	if(SvTYPE(sv_value) != SVt_IV)
-	  croak("RfcSetInt2 (%s): not an Integer\n", u16to8(name));
+	  croak("RfcSetInt2 (%s): not an Integer\n", sv_pv(u16to8(name)));
 	if (SvIV(sv_value) > 4095)
 	  croak("RfcSetInt2 invalid input value too big on (%s): %s\n", sv_pv(u16to8(name)), sv_pv(sv_value));
   rc = RfcSetInt2(hcont, name, (RFC_INT2) SvIV(sv_value), &errorInfo);
@@ -2026,7 +2026,7 @@ void set_string_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name, SV* sv_value){
 	SAP_UC *p_value;
 
 	if(SvTYPE(sv_value) != SVt_PV)
-	  croak("RfcSetString (%s): not a Scalar\n", u16to8(name));
+	  croak("RfcSetString (%s): not a Scalar\n", sv_pv(u16to8(name)));
   p_value = u8to16(sv_value);
   rc = RfcSetString(hcont, name, p_value, strlenU(p_value), &errorInfo);
   free(p_value);
@@ -2048,7 +2048,7 @@ void set_xstring_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name, SV* sv_value){
   RFC_ERROR_INFO errorInfo;
 
 	if(SvTYPE(sv_value) != SVt_PV)
-	  croak("RfcSetXString (%s): not a Scalar\n", u16to8(name));
+	  croak("RfcSetXString (%s): not a Scalar\n", sv_pv(u16to8(name)));
   rc = RfcSetXString(hcont, name, (SAP_RAW *)SvPV(sv_value, SvCUR(sv_value)), SvCUR(sv_value), &errorInfo);
   if (rc != RFC_OK) {
 	  croak("Problem with RfcSetXString (%s): %d / %s / %s\n",
@@ -2079,12 +2079,12 @@ void set_structure_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name, SV* sv_value
 
   hv_value =  (HV*)SvRV( sv_value );
 	if(SvTYPE(hv_value) != SVt_PVHV)
-	  croak("RfcSetStructure (%s): not a HASH\n", u16to8(name));
+	  croak("RfcSetStructure (%s): not a HASH\n", sv_pv(u16to8(name)));
 
   idx = hv_iterinit(hv_value);
 
 	if (idx == 0) {
-	  croak("RfcSetStructure (%s): no fieldname keys\n", u16to8(name));
+	  croak("RfcSetStructure (%s): no fieldname keys\n", sv_pv(u16to8(name)));
 	}
 
   rc = RfcGetStructure(hcont, name, &line, &errorInfo);
@@ -2269,7 +2269,7 @@ void set_table_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name, SV* sv_value){
 
   av_value =  (AV*)SvRV( sv_value );
 	if(SvTYPE(av_value) != SVt_PVAV)
-	  croak("set_tabl_value (%s): not an ARRAY\n", u16to8(name));
+	  croak("set_tabl_value (%s): not an ARRAY\n", sv_pv(u16to8(name)));
 
 	idx = av_len(av_value);
 	for (r = 0; r <= idx; r++) {

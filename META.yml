@@ -1,11 +1,11 @@
 --- #YAML:1.0
 name:                sapnwrfc
-version:             0.21
+version:             0.22
 abstract:            sapnwrfc - SAP Netweaver RFC support for Perl
 license:             ~
 author:              
     - Piers Harding <piers@cpan.org>
-generated_by:        ExtUtils::MakeMaker version 6.44
+generated_by:        ExtUtils::MakeMaker version 6.42
 distribution_type:   module
 requires:     
     Test::More:                    0

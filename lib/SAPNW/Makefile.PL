@@ -34,11 +34,9 @@ if($^O eq 'MSWin32') {
   $ADD_FLAGS .= " -DSAPonNT ";
   $ADD_FLAGS .= " -DSAP_PLATFORM_MAKENAME=ntintel ";
 } else {
-  #$ADD_FLAGS = " -g -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -m64 -mno-3dnow -fno-strict-aliasing -pipe -fexceptions -funsigned-char -Wall -Wno-uninitialized -Wno-long-long -Wcast-align ";
-  $ADD_FLAGS = " -D_LARGEFILE_SOURCE -mno-3dnow -fno-strict-aliasing -pipe -fexceptions -funsigned-char -Wall -Wno-uninitialized -Wno-long-long -Wcast-align ";
+  $ADD_FLAGS  = $Config{ccflags} . ' ' . $Config{ccflags_uselargefiles};
   $ADD_FLAGS .= " -DSAPwithUNICODE ";
   $ADD_FLAGS .= " -DSAPonUNIX ";
-#  $ADD_FLAGS .= " -DSAP_PLATFORM_MAKENAME=linuxx86_64 ";
   $ADD_FLAGS .= " -D__NO_MATH_INLINES -fPIC ";
   $ADD_FLAGS .= " -DSAPwithTHREADS ";
 }
