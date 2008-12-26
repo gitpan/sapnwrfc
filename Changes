@@ -9,3 +9,9 @@ Thu Jun 26 18:59:57 NZST 2008
 
 Tue Oct 14 06:09:26 NZDT 2008
   * Fixed test plans - thanks Shane Boyce
+
+Mon Dec  8 07:02:31 NZDT 2008
+  * fix compile flags - thanks Rens Rehsack.
+
+Fri Dec 26 10:57:43 NZDT 2008
+  * Fixes for registered RFC work thanks to Matthias Flury

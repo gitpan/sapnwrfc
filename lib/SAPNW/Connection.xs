@@ -312,9 +312,9 @@ SV*  SAPNWRFC_disconnect(SV* sv_self){
       //fprintf(stderr, "Disconnect conn_handle: %p - %p\n", hptr, hptr->handle);
       rc = RfcCloseConnection(hptr->handle, &errorInfo);
 	    /* fprintf(stderr, "conn_handle_close called: %d\n", rc);  */
+     	hptr->handle = NULL;
+    	free(hptr);
       if (rc != RFC_OK) {
-	    	hptr->handle = NULL;
-		  	free(hptr);
 	      hv_delete(h_self, (char *) "handle", 6, 0);
 	      croak("Problem closing RFC connection handle: %d / %s / %s\n",
 	                           errorInfo.code, 
@@ -322,8 +322,6 @@ SV*  SAPNWRFC_disconnect(SV* sv_self){
 		      									 sv_pv(u16to8(errorInfo.message)));
 		     return(&PL_sv_undef);
 	    } else {
-	    	hptr->handle = NULL;
-		  	free(hptr);
 	      hv_store(h_self, (char *) "handle", 6, &PL_sv_undef, 0);
 			  //fprintf(stderr, "Happy on close\n");
 	      hv_delete(h_self, (char *) "handle", 6, 0);
@@ -662,7 +660,7 @@ RFC_TYPE_DESC_HANDLE SAPNW_build_type(SV* sv_name, SV* sv_fields) {
 	typeDesc = SAPNW_alloc_type((pname = u8to16(sv_name)));
 	free(pname);
 	RfcGetTypeName(typeDesc, abap_name, &errorInfo);
-	fprintfU(stderr, cU("creating type: %s\n"), abap_name);
+	//fprintfU(stderr, cU("creating type: %s\n"), abap_name);
 
   off = 0;
 	uoff = 0;
@@ -684,7 +682,7 @@ RFC_TYPE_DESC_HANDLE SAPNW_build_type(SV* sv_name, SV* sv_fields) {
     sv_flen = *hv_fetch(hv_field, (char *) "len", 3, FALSE);
     sv_fulen = *hv_fetch(hv_field, (char *) "ulen", 4, FALSE);
     sv_fdecimals = *hv_fetch(hv_field, (char *) "decimals", 8, FALSE);
-	  fprintf(stderr, "got field vals: %s len: %d ulen: %d dec: %d\n", sv_pv(sv_fname), (int) SvIV(sv_flen), (int) SvIV(sv_fulen), (int) SvIV(sv_fdecimals));
+	  //fprintf(stderr, "got field vals: %s len: %d ulen: %d dec: %d\n", sv_pv(sv_fname), (int) SvIV(sv_flen), (int) SvIV(sv_fulen), (int) SvIV(sv_fdecimals));
 	  if (SvIV(sv_ftype) == RFCTYPE_STRUCTURE ||
 	      SvIV(sv_ftype) == RFCTYPE_TABLE) {
 			//fprintf(stderr, "Field has complex type\n");
@@ -1892,7 +1890,7 @@ void set_char_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name, SV* sv_value, uns
 	SAP_UC *p_value;
 
 
-	if(SvTYPE(sv_value) != SVt_PV)
+    if(SvTYPE(sv_value) != SVt_PV && SvTYPE(sv_value) != SVt_PVMG)
 	  croak("RfcSetChar (%s): not a Scalar\n", sv_pv(u16to8(name)));
 	if (SvCUR(sv_value) > max)
 	  croak("RfcSetChar string too long (%s): %s\n", sv_pv(u16to8(name)), sv_pv(sv_value));

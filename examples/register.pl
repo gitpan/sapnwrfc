@@ -31,7 +31,7 @@ $func->callback(\&do_remote_pipe);
 my $pass = 0;
 my $server = SAPNW::Rfc->rfc_register(
                            tpname   => 'wibble.rfcexec',
-                           gwhost   => 'ubuntu.local.net',
+                           gwhost   => 'gecko.local.net',
                            gwserv   => '3301',
                            trace    => '1' );
 
@@ -59,7 +59,9 @@ sub do_remote_pipe {
   $func->PIPEDATA( [ map {  { 'LINE' => pack("A80",$_) } } split(/\n/, `$ls`) ]);
   #die "MY_CUSTOM_ERROR with some other text";
 	$pass += 1;
-	if ($pass >= 750) {
+    warn "pass: $pass\n";
+	if ($pass >= 75) {
+    warn "going to die...\n";
     return undef;
 	} else {
     return 1;
