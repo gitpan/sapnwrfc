@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                sapnwrfc
-version:             0.23
+version:             0.24
 abstract:            sapnwrfc - SAP Netweaver RFC support for Perl
 license:             ~
 author:              
