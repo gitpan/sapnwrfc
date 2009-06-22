@@ -4,6 +4,7 @@ MANIFEST
 Makefile.PL
 sap.yml
 sapnwrfc.pm
+sapnwrfc-cookbook.pod
 lib/SAPNW/Connection.xs
 lib/SAPNW/Connection.pm
 lib/SAPNW/Base.pm

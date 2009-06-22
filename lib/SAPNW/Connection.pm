@@ -2,7 +2,7 @@ package SAPNW::Connection;
 
 =pod
 
-    Copyright (c) 2006 - 2008 Piers Harding.
+    Copyright (c) 2006 - 2009 Piers Harding.
         All rights reserved.
 
 =cut
@@ -14,12 +14,12 @@ package SAPNW::Connection;
   use Data::Dumper;
   use SAPNW::Base;
 
-	use base qw(SAPNW::Base);
+  use base qw(SAPNW::Base);
 
 
 
   use vars qw(@ISA $VERSION $DEBUG $SAPNW_RFC_CONFIG);
-  $VERSION = '0.24';
+  $VERSION = '0.26';
   @ISA = qw(DynaLoader Exporter); 
 
   sub dl_load_flags { $^O =~ /hpux|aix/ ? 0x00 : 0x01 }
@@ -36,29 +36,29 @@ package SAPNW::Connection;
     };
     bless($self, $class);
     return $self;
-	}
+    }
 
 
-	sub config {
-	  my $self = shift;
-		return $self->{config};
-	}
+    sub config {
+      my $self = shift;
+        return $self->{config};
+    }
 
 
-	sub interfaces {
-	  my $self = shift;
-		return $self->{interfaces};
-	}
+    sub interfaces {
+      my $self = shift;
+        return $self->{interfaces};
+    }
 
 
-	sub installFunction {
-	  my $self = shift;
-		my ($func, $sysid) = @_;
-		die "must be passed a Function Descriptor\n" unless
-		  ref($func) eq "SAPNW::RFC::FunctionDescriptor";
-		$sysid ||= "";
-    return SAPNW::Connection::install($func, $sysid);
-	}
+    sub installFunction {
+       my $self = shift;
+       my ($func, $sysid) = @_;
+       die "must be passed a Function Descriptor\n" unless
+          ref($func) eq "SAPNW::RFC::FunctionDescriptor";
+       $sysid ||= "";
+       return SAPNW::Connection::install($func, $sysid);
+    }
 
 
 sub handler {
@@ -68,8 +68,8 @@ sub handler {
 
   my $result = "";
   eval { $result = &$handler($attrib); };
-	$result = $@ if $@;
-	debug("global callback result: $result");
+    $result = $@ if $@;
+    debug("global callback result: $result");
   return $result;
 
 }
@@ -77,15 +77,18 @@ sub handler {
 
 sub main_handler {
 
-  my $func = shift;
-  my $fcall = shift;
-	my $handler = $func->callback;
-  my $result = "";
-  eval { $result = &$handler($fcall); };
-	$result = $@ if $@;
-	debug("function callback result: $result");
-  return $result;
-
+    my $func = shift;
+    my $parameters = shift;
+    my $fcall = {'parameters' => $parameters};
+    bless($fcall, 'SAPNW::RFC::FunctionCall');
+    my $handler = $func->callback;
+    my $result = "";
+    eval { $result = &$handler($fcall); };
+    $result = {'message' => $@, 'code' => 999, 'key' => 'PERL_ERROR'} if $@;
+    debug("function callback result: $result");
+    delete $fcall->{'parameters'};
+    undef $fcall;
+    return $result;
 }
 
 

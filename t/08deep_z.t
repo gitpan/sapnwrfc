@@ -35,7 +35,7 @@ foreach (1..ITER) {
     ok($ft->invoke);
     ok($ft->EXPORT_TAB->[0]->{'I'} == 123);
     ($c) = $ft->EXPORT_TAB->[0]->{'C'} =~ /^(\S+)/;
-		print STDERR "EXPORT_TAB ROW: ".Dumper($ft->EXPORT_TAB->[0])."\n";
+	#print STDERR "EXPORT_TAB ROW: ".Dumper($ft->EXPORT_TAB->[0])."\n";
     ok($c eq 'AbCdEf');
     $str = $ft->EXPORT_TAB->[0]->{'STR'};
 		$str =~ s/\s+$//;
@@ -75,7 +75,7 @@ eval {
     ok($ft->invoke);
     ok($ft->EXPORT_TAB->[0]->{'I'} == 123);
     ($c) = $ft->EXPORT_TAB->[0]->{'C'} =~ /^(\S+)/;
-		print STDERR "EXPORT_TAB ROW: ".Dumper($ft->EXPORT_TAB->[0])."\n";
+	#print STDERR "EXPORT_TAB ROW: ".Dumper($ft->EXPORT_TAB->[0])."\n";
     ok($c eq 'AbCdEf');
     $str = $ft->EXPORT_TAB->[0]->{'STR'};
 		$str =~ s/\s+$//;

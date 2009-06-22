@@ -15,3 +15,11 @@ Mon Dec  8 07:02:31 NZDT 2008
 
 Fri Dec 26 10:57:43 NZDT 2008
   * Fixes for registered RFC work thanks to Matthias Flury
+
+Mon Jun 22 16:51:14 NZST 2009
+  * Fixes on connection parameters
+  * sapnwrfc-cookbook - a comprehensive set of examples, and discussions there in
+  * Better installation instructions
+  * revamped RFC server code
+  * banishment of RFC client memory leaks
+  * thanks to ce.com.au (Adam Kennedy) for all assistance in making these improvements possible.

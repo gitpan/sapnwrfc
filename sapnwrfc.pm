@@ -1,8 +1,15 @@
 package sapnwrfc;
 use strict;
+use 5.010;
+=pod
+
+    Copyright (c) 2006 - 2009 Piers Harding.
+    All rights reserved.
+
+=cut
 
 use vars qw($VERSION $AUTOLOAD $DEBUG);
-$VERSION = '0.24';
+$VERSION = '0.26';
 
 use SAPNW::Base;
 $SAPNW::Base::DEBUG = 0;
@@ -12,6 +19,8 @@ use SAPNW::Connection;
 use SAPNW::RFC::FunctionDescriptor;
 use SAPNW::RFC::FunctionCall;
 use SAPNW::RFC::Parameter;
+
+use base qw(SAPNW::Rfc);
 
 
 =head1 NAME
@@ -50,6 +59,8 @@ The next generation RFCSDK from SAP provides a number of interesting new feature
 =item * deep/nested structures
 
 =back
+
+Comprehensive examples can be found in the L<sapnwrfc-cookbook>.
 
 The UNICODE support is built fundamentally into the core of the new SDK, and as a result this is reflected in sapnwrfc. sapnwrfc takes UTF-8 as its only input character set, and handles the translation of this to UTF-16 as required by the RFCSDK.
 
@@ -116,7 +127,7 @@ Many thanks to:
 
 =head1 SEE ALSO
 
-perl(1), ABAP(101).
+L<sapnwrfc-cookbook>, perl(1), ABAP(101).
 
 =cut
 

@@ -1,4 +1,4 @@
-use 5.008;
+use 5.010;
 # you must - repeat MUST have Perl 5.8 or greater !!!!
 use ExtUtils::MakeMaker;
 use Getopt::Long;
@@ -79,8 +79,8 @@ WriteMakefile(
     dist => { 'TARFLAGS'    => 'cvf',
               'COMPRESS'        => 'gzip -9f',
             'SUFFIX'    => '.tgz'},
-		'DIR' => [ 'lib/SAPNW' ],
-		'PREREQ_PM' => { 'YAML' => 0, 'Test::More' => 0 },
+    'DIR' => [ 'lib/SAPNW' ],
+    'PREREQ_PM' => { 'YAML' => 0, 'Test::More' => 0 },
     'AUTHOR' => 'Piers Harding <piers@cpan.org>',
     'ABSTRACT' => 'sapnwrfc - SAP Netweaver RFC support for Perl',
     'VERSION_FROM'    => 'sapnwrfc.pm',

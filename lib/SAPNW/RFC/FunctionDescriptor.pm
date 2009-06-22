@@ -1,7 +1,7 @@
 package SAPNW::RFC::FunctionDescriptor;
 =pod
 
-    Copyright (c) 2006 - 2008 Piers Harding.
+    Copyright (c) 2006 - 2009 Piers Harding.
     All rights reserved.
 
 =cut
@@ -13,7 +13,7 @@ use SAPNW::Base;
 use base qw(SAPNW::Base);
 
 use vars qw($VERSION $AUTOLOAD);
-$VERSION = '0.03';
+$VERSION = '0.26';
 
 
   sub AUTOLOAD {
@@ -28,90 +28,90 @@ $VERSION = '0.03';
     if ( exists $self->{parameters}->{$name} ) {
         return $self->{parameters}->{$name};
     } else {
-		    #debug(Dumper($self));
+            #debug(Dumper($self));
         die "Parameter $name does not exist in Interface Descriptor - no autoload";
     };
   }
 
-	sub DESTROY {
-    my $self = shift;
-		return SAPNW::Connection::destroy_function_descriptor($self);
-	}
+    sub DESTROY {
+        my $self = shift;
+        return SAPNW::Connection::destroy_function_descriptor($self);
+    }
 
   sub new {
     my $proto = shift;
     my $class = ref($proto) || $proto;
-		my ($name) = @_;
-		return SAPNW::Connection::create_function_descriptor($name);
-	}
+        my ($name) = @_;
+        return SAPNW::Connection::create_function_descriptor($name);
+    }
 
-	sub name {
-	  my $self = shift;
-		return $self->{name};
-	}
+    sub name {
+      my $self = shift;
+        return $self->{name};
+    }
 
 
-	# internal method used to add parameters from within the C extension
+    # internal method used to add parameters from within the C extension
   sub addParameter {
-	  my $self = shift;
+    my $self = shift;
     my ($name, $direction, $type, $len, $ulen, $decimals) = @_;
     #debug("parm: $name direction: $direction type: $type len: $len decimals: $decimals\n");
     if (ref($name) eq "SAPNW::RFC::Export" ||
-		    ref($name) eq "SAPNW::RFC::Import" ||
-				ref($name) eq "SAPNW::RFC::Changing" ||
-				ref($name) eq "SAPNW::RFC::Table") {
-			my $k = $name->name;
-      $self->{parameters}->{$k} = SAPNW::Connection::add_parameter($self, $name);
-		  return $self->{parameters}->{$k};
-		}
+        ref($name) eq "SAPNW::RFC::Import" ||
+        ref($name) eq "SAPNW::RFC::Changing" ||
+        ref($name) eq "SAPNW::RFC::Table") {
+        my $k = $name->name;
+        $self->{parameters}->{$k} = SAPNW::Connection::add_parameter($self, $name);
+        return $self->{parameters}->{$k};
+    }
     my $p;
     if ($direction == RFCIMPORT) {
-		  if (exists $self->{parameters}->{$name} && $self->{parameters}->{$name}->direction == RFCEXPORT) {
-			  $p = SAPNW::RFC::Changing->new(name => $name, type => $type, len => $len, ulen => $ulen, decimals => $decimals);
-			} else {
-			  $p = SAPNW::RFC::Import->new(name => $name, type => $type, len => $len, ulen => $ulen, decimals => $decimals);
-			}
-	  } elsif ($direction == RFCEXPORT) {
-		  if (exists $self->{parameters}->{$name} && $self->{parameters}->{$name}->direction == RFCIMPORT) {
-			  $p = SAPNW::RFC::Changing->new(name => $name, type => $type, len => $len, ulen => $ulen, decimals => $decimals);
-			} else {
-			  $p = SAPNW::RFC::Export->new(name => $name, type => $type, len => $len, ulen => $ulen, decimals => $decimals);
-			}
-	  } elsif ($direction == RFCCHANGING) {
-			  $p = SAPNW::RFC::Changing->new(name => $name, type => $type, len => $len, ulen => $ulen, decimals => $decimals);
-	  } elsif ($direction == RFCTABLES) {
-			  $p = SAPNW::RFC::Table->new(name => $name, type => $type, len => $len, ulen => $ulen, decimals => $decimals);
-	  } else {
-		  die "unknown direction ($name): $direction\n";
-	  }
+          if (exists $self->{parameters}->{$name} && $self->{parameters}->{$name}->direction == RFCEXPORT) {
+              $p = SAPNW::RFC::Changing->new(name => $name, type => $type, len => $len, ulen => $ulen, decimals => $decimals);
+            } else {
+              $p = SAPNW::RFC::Import->new(name => $name, type => $type, len => $len, ulen => $ulen, decimals => $decimals);
+            }
+      } elsif ($direction == RFCEXPORT) {
+          if (exists $self->{parameters}->{$name} && $self->{parameters}->{$name}->direction == RFCIMPORT) {
+              $p = SAPNW::RFC::Changing->new(name => $name, type => $type, len => $len, ulen => $ulen, decimals => $decimals);
+            } else {
+              $p = SAPNW::RFC::Export->new(name => $name, type => $type, len => $len, ulen => $ulen, decimals => $decimals);
+            }
+      } elsif ($direction == RFCCHANGING) {
+              $p = SAPNW::RFC::Changing->new(name => $name, type => $type, len => $len, ulen => $ulen, decimals => $decimals);
+      } elsif ($direction == RFCTABLES) {
+              $p = SAPNW::RFC::Table->new(name => $name, type => $type, len => $len, ulen => $ulen, decimals => $decimals);
+      } else {
+          die "unknown direction ($name): $direction\n";
+      }
     $self->{parameters}->{$p->name} = $p;
-		return $p;
+        return $p;
   }
 
 
-	sub parameters {
-	  my $self = shift;
-		return $self->{parameters};
-	}
+    sub parameters {
+      my $self = shift;
+        return $self->{parameters};
+    }
 
 
-	sub callback {
-	  my $self = shift;
-		$self->{'callback'} = shift if scalar @_ == 1;
-	  return $self->{'callback'};
-	}
+    sub callback {
+      my $self = shift;
+        $self->{'callback'} = shift if scalar @_ == 1;
+      return $self->{'callback'};
+    }
 
-	sub make_empty_function_call {
-	  my $self = shift;
-		return SAPNW::RFC::FunctionCall->new($self);
-	}
+    sub make_empty_function_call {
+      my $self = shift;
+        return SAPNW::RFC::FunctionCall->new($self);
+    }
 
 
-	sub create_function_call {
-	  my $self = shift;
+    sub create_function_call {
+      my $self = shift;
     #debug("create_function_call: ".Dumper($self));
-		return SAPNW::Connection::create_function_call($self);
-	}
+        return SAPNW::Connection::create_function_call($self);
+    }
 
 
 1;

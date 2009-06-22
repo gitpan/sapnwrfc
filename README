@@ -1,17 +1,17 @@
 
-			   sapnwrfc - SAP Netweaver RFC support for Perl
+               sapnwrfc - SAP Netweaver RFC support for Perl
 
 
-    Copyright (c) 2006 - 2008 Piers Harding.
+    Copyright (c) 2006 - 2009 Piers Harding.
     All rights reserved.
     This program is free software; you can redistribute it and/or modify
     it under the terms of either:
 
-	a) the GNU General Public License as published by the Free
-	Software Foundation; either version 1, or (at your option) any
-	later version, or
+    a) the GNU General Public License as published by the Free
+    Software Foundation; either version 1, or (at your option) any
+    later version, or
 
-	b) the "Artistic License" which comes with this Kit.
+    b) the "Artistic License" which comes with this Kit.
 
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -48,24 +48,31 @@
     spells all this out for your protection, so you may prefer to use that.
 
 
-    One last thing - The SAP RFCSDK is a prerequisite for this perl package to work.  The RFCSDK is proprietrary software owned by SAP AG.  For this reason I will not supply ANY component part of the RFCSDK with this perl package, and further more you must obtain it through the normal channels with SAP AG - ie. you must have a licensed SAP R/3 installation at your disposal.
+    One last thing - The SAP NW RFC SDK is a prerequisite for this perl package
+    to work.  The NW RFC SDK is proprietary software owned by SAP AG.  For this
+    reason I will not supply ANY component part of the RFCSDK with this perl 
+    package, and further more you must obtain it through the normal channels 
+    with SAP AG - ie. you must have a licensed SAP R/3 installation at your
+    disposal.
 
 
 ****ATTENTION****
 
-This package will NOT work unless you obtain the new RFCSDK for SAP NewWeaver from SAP - this is commonly refered to as "sapnwrfc", and is a complete rewrite from the previous one.
+This package will NOT work unless you obtain the latest NW RFC SDK for SAP NewWeaver
+from SAP - this is package is commonly referred to as "sapnwrfc", and is a complete
+rewrite from the previous one called SAP::Rfc.
 
 
 Installation
 
 In brief, the following should work on most systems:
   perl Makefile.PL
-	make
-	make test  << provide all your host routing information.
-	make install
+  make
+  make test  << provide all your host routing information.
+  make install
 
 Help on the build process is available by doing:
-        perl Makefile.PL --help
+  perl Makefile.PL --help
 
 and it says:
 
@@ -95,15 +102,25 @@ YOU MUST MAKE SURE THAT YOU ADD THE LIB PATH TO LD_LIBRARY_PATH
 EG:
 export LD_LIBRARY_PATH=/usr/sap/rfcsdk/lib
 
-
 Example:
 
 perl Makefile.PL --source /opt/rfcsdk --addlibs '-lsomethingwacky'
 
+My personal build script contains:
+perl Makefile.PL --source=/home/piers/code/sap/nwrfcsdk
+
+where the SAR file for the NW RFC SDK has been unpacked into 
+/home/piers/code/sap.
+
+Help on obtaining the NW RFC SDK can be found in the OSS notes 
+on http://service.sap.com/support.
+
+Ulrich updates the notes:
+https://service.sap.com/sap/support/notes/1025361  - availability
+https://service.sap.com/sap/support/notes/1056696  - compiling help
 
 Please email directly if you have problems, and are willing to help 
 with testing (especially for other platforms) => piers@cpan.org.
-
 
 
 Cheers - Piers Harding - R/2 R/3 BASIS, IFACE, JAPH, whatever ...

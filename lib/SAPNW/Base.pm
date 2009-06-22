@@ -2,7 +2,7 @@ package SAPNW::Base;
 
 =pod
 
-    Copyright (c) 2006 - 2008 Piers Harding.
+    Copyright (c) 2006 - 2009 Piers Harding.
         All rights reserved.
 
 =cut
@@ -12,7 +12,7 @@ package SAPNW::Base;
   use Data::Dumper;
 
   use vars qw($VERSION $DEBUG $SAPNW_RFC_CONFIG);
-  $VERSION = '0.02';
+  $VERSION = '0.26';
 
   use constant RFCIMPORT     => 1;
   use constant RFCEXPORT     => 2;
@@ -69,7 +69,7 @@ package SAPNW::Base;
 
   # Export useful tools
   my @export_ok = qw(
-	 debug
+     debug
    RFCIMPORT
    RFCEXPORT
    RFCCHANGING
@@ -119,8 +119,8 @@ package SAPNW::Base;
    RFC_BUFFER_TOO_SMALL
    RFC_TABLE_MOVE_BOF
    RFC_TABLE_MOVE_EOF
-	 Dumper
-	);
+     Dumper
+    );
 
   sub import {
     my ( $caller ) = caller;
@@ -131,9 +131,9 @@ package SAPNW::Base;
   }
 
   sub debug {
-	  return unless $DEBUG;
-		print STDERR scalar localtime() . " - ". caller(), ":> " , @_, "\n";
-	}
+      return unless $DEBUG;
+        print STDERR scalar localtime() . " - ". caller(), ":> " , @_, "\n";
+    }
 
 
 1;

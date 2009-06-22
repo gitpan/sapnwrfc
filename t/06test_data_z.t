@@ -1,7 +1,7 @@
 use Test::More;
 use constant ITER => 50;
 use Data::Dumper;
-
+use utf8;
 use sapnwrfc;
 
 print "Testing SAPNW::Rfc-$SAPNW::Rfc::VERSION\n";
@@ -35,7 +35,7 @@ foreach (1..ITER) {
     ok($fd->name eq 'Z_TEST_DATA');
     my $fc = $fd->create_function_call;
     ok(ref($fc) eq 'SAPNW::RFC::FunctionCall');
-		ok($fc->name eq "Z_TEST_DATA");
+	ok($fc->name eq "Z_TEST_DATA");
     $fc->CHAR("German: öäüÖÄÜß");
     $fc->INT1(123);
     $fc->INT2(1234);
@@ -53,49 +53,51 @@ foreach (1..ITER) {
 		#  print STDERR "row: ".Dumper($row)."\n";
 		#}
     ok(scalar(@{$fc->DATA}) == 2);
-		ok($fc->EINT1 == $fc->INT1);
-		ok($fc->EINT2 == $fc->INT2);
-		ok($fc->EINT4 == $fc->INT4);
-		ok($fc->EFLOAT == $fc->FLOAT);
-		ok($fc->ENUMC eq $fc->NUMC);
-		ok($fc->EDATE eq $fc->DATE);
-		ok($fc->ETIME eq $fc->TIME);
-		ok($fc->EBCD == $fc->BCD);
-		#print STDERR "EBCD: ".$fc->EBCD."\n";
-		#print STDERR "EFLOAT: ".$fc->EFLOAT."\n";
-		#print STDERR "CHAR: ".$fc->CHAR."#\n";
-		#print STDERR "ECHAR: ".$fc->ECHAR."#\n";
-		my $echar = $fc->ECHAR;
-		$echar =~ s/\s+$//;
-		#print STDERR "echar: ".$echar."#\n";
-		#print STDERR "FC: ".Dumper($fc)."\n";
-		ok($echar eq $fc->CHAR);
-		ok($fc->ESTRUCT->{ZINT1} == $fc->ISTRUCT->{ZINT1});
-		ok($fc->ESTRUCT->{ZINT2} == $fc->ISTRUCT->{ZINT2});
-		ok($fc->ESTRUCT->{ZIT4} == $fc->ISTRUCT->{ZIT4});
-		ok($fc->ESTRUCT->{ZFLT} == $fc->ISTRUCT->{ZFLT});
-		ok($fc->ESTRUCT->{ZBCD} == $fc->ISTRUCT->{ZBCD});
-		ok($fc->ESTRUCT->{ZNUMC} eq $fc->ISTRUCT->{ZNUMC});
-		ok($fc->ESTRUCT->{ZDATE} eq $fc->ISTRUCT->{ZDATE});
-		ok($fc->ESTRUCT->{ZTIME} eq $fc->ISTRUCT->{ZTIME});
-		$echar = $fc->ESTRUCT->{ZCHAR};
-		$echar =~ s/\s+$//;
-		ok($echar eq $fc->ISTRUCT->{ZCHAR});
-		#print STDERR "RESULT: ".Dumper($fc->RESULT)."\n";
-		#foreach my $row (@{$fc->RESULT}) {
-		#  print STDERR "row: ".Dumper($row)."\n";
-		#}
-		ok($fc->DATA->[0]->{ZINT1} == $fc->ISTRUCT->{ZINT1});
-		ok($fc->DATA->[0]->{ZINT2} == $fc->ISTRUCT->{ZINT2});
-		ok($fc->DATA->[0]->{ZIT4} == $fc->ISTRUCT->{ZIT4});
-		ok($fc->DATA->[0]->{ZFLT} == $fc->ISTRUCT->{ZFLT});
-		ok($fc->DATA->[0]->{ZBCD} == $fc->ISTRUCT->{ZBCD});
-		ok($fc->DATA->[0]->{ZNUMC} eq $fc->ISTRUCT->{ZNUMC});
-		ok($fc->DATA->[0]->{ZDATE} eq $fc->ISTRUCT->{ZDATE});
-		ok($fc->DATA->[0]->{ZTIME} eq $fc->ISTRUCT->{ZTIME});
-		$echar = $fc->DATA->[0]->{ZCHAR};
-		$echar =~ s/\s+$//;
-		ok($echar eq $fc->ISTRUCT->{ZCHAR});
+	ok($fc->EINT1 == $fc->INT1);
+	ok($fc->EINT2 == $fc->INT2);
+	ok($fc->EINT4 == $fc->INT4);
+	ok($fc->EFLOAT == $fc->FLOAT);
+	ok($fc->ENUMC eq $fc->NUMC);
+	ok($fc->EDATE eq $fc->DATE);
+	ok($fc->ETIME eq $fc->TIME);
+	ok($fc->EBCD == $fc->BCD);
+	#print STDERR "EBCD: ".$fc->EBCD."\n";
+	#print STDERR "EFLOAT: ".$fc->EFLOAT."\n";
+	#print STDERR "CHAR: ".length($fc->CHAR)."#\n";
+	#print STDERR "ECHAR: ".length($fc->ECHAR)."#\n";
+    #print STDERR "ECHAR: ".$fc->ECHAR."#\n";
+	my $echar = $fc->ECHAR;
+	$echar =~ s/\s+$//;
+	#print STDERR "echar: ".$echar."#\n";
+    #print STDERR " char: ".$fc->CHAR."#\n";
+	#print STDERR "FC: ".Dumper($fc)."\n";
+	ok($echar eq $fc->CHAR);
+	ok($fc->ESTRUCT->{ZINT1} == $fc->ISTRUCT->{ZINT1});
+	ok($fc->ESTRUCT->{ZINT2} == $fc->ISTRUCT->{ZINT2});
+	ok($fc->ESTRUCT->{ZIT4} == $fc->ISTRUCT->{ZIT4});
+	ok($fc->ESTRUCT->{ZFLT} == $fc->ISTRUCT->{ZFLT});
+	ok($fc->ESTRUCT->{ZBCD} == $fc->ISTRUCT->{ZBCD});
+	ok($fc->ESTRUCT->{ZNUMC} eq $fc->ISTRUCT->{ZNUMC});
+	ok($fc->ESTRUCT->{ZDATE} eq $fc->ISTRUCT->{ZDATE});
+	ok($fc->ESTRUCT->{ZTIME} eq $fc->ISTRUCT->{ZTIME});
+	$echar = $fc->ESTRUCT->{ZCHAR};
+	$echar =~ s/\s+$//;
+	ok($echar eq $fc->ISTRUCT->{ZCHAR});
+	#print STDERR "RESULT: ".Dumper($fc->RESULT)."\n";
+	#foreach my $row (@{$fc->RESULT}) {
+	#  print STDERR "row: ".Dumper($row)."\n";
+	#}
+	ok($fc->DATA->[0]->{ZINT1} == $fc->ISTRUCT->{ZINT1});
+	ok($fc->DATA->[0]->{ZINT2} == $fc->ISTRUCT->{ZINT2});
+	ok($fc->DATA->[0]->{ZIT4} == $fc->ISTRUCT->{ZIT4});
+	ok($fc->DATA->[0]->{ZFLT} == $fc->ISTRUCT->{ZFLT});
+	ok($fc->DATA->[0]->{ZBCD} == $fc->ISTRUCT->{ZBCD});
+	ok($fc->DATA->[0]->{ZNUMC} eq $fc->ISTRUCT->{ZNUMC});
+	ok($fc->DATA->[0]->{ZDATE} eq $fc->ISTRUCT->{ZDATE});
+	ok($fc->DATA->[0]->{ZTIME} eq $fc->ISTRUCT->{ZTIME});
+	$echar = $fc->DATA->[0]->{ZCHAR};
+	$echar =~ s/\s+$//;
+	ok($echar eq $fc->ISTRUCT->{ZCHAR});
     ok($conn->disconnect);
 	};
 	if ($@) {

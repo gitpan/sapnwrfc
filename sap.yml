@@ -1,4 +1,4 @@
-ashost: gecko.local.net
+ashost: /H/gecko.local.net
 sysnr: "01"
 client: "001"
 user: developer
@@ -6,4 +6,4 @@ passwd: developer
 lcheck: 1
 lang: EN
 trace: 2
-debug: 1
+debug: 0
