@@ -23,3 +23,6 @@ Mon Jun 22 16:51:14 NZST 2009
   * revamped RFC server code
   * banishment of RFC client memory leaks
   * thanks to ce.com.au (Adam Kennedy) for all assistance in making these improvements possible.
+  
+ Tue Jun 23 17:00:52 NZST 2009
+   * further banishment of memory leaks when using tables in RFC client calls
