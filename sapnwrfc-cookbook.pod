@@ -6,8 +6,8 @@
 sapnwrfc-cookbook - How to cook with sapnwrfc - SAP Netweaver RFC 
 support for Perl through the SAP NW RFC SDK.
 
-Note: refer to the README file in the package archive for build
-instructions, and that kind of help.
+Note: refer to the README (L<http://search.cpan.org/dist/sapnwrfc/README>)
+file in the package archive for build instructions, and that kind of help.
 
 =head1 DESCRIPTION
 
@@ -107,12 +107,12 @@ A basic example for RFC client connect is:
   trace: 2
   debug: 0
 
-The parameter L<debug> is an added one to trigger debugging messages in sapnwrfc.
+The parameter debug is an added one to trigger debugging messages in sapnwrfc.
 
 B<Using SAP SSO>
 
 To connect using SAP SSO, you can specify the ticket in Base64 encoded form, 
-using the the L<mysapsso2> parameter. So not supply L<user> or L<passwd>.  SNC 
+using the the mysapsso2 parameter. So not supply user or passwd.  SNC 
 and SSO over trusted relationships also works, but is beyond the scope of this
 cookbook.  See https://www.sdn.sap.com/irj/scn/weblogs?blog=/pub/wlg/4586, and
 https://www.sdn.sap.com/irj/scn/weblogs?blog=/pub/wlg/1452 for help.
@@ -160,6 +160,7 @@ The attributes available are something like:
   };
 
 B<Example:>
+
   my $conn = SAPNW::Rfc->rfc_connect;
   my $attrib = $conn->connection_attributes;
   warn Dumper($attrib);
@@ -178,6 +179,7 @@ Table type parameters return an Array ref.  Each row of the array
 contains a hash ref of the fields as key/value pairs.
 
 B<Example:>
+
   my $conn = SAPNW::Rfc->rfc_connect;
   my $rd = $conn->function_lookup("RPY_PROGRAM_READ");
   my $rc = $rd->create_function_call;
@@ -198,6 +200,7 @@ so too are the out bound entries.  Notice the table parameter OPTIONS
 below.
 
 B<Example:>
+
   my $conn = SAPNW::Rfc->rfc_connect;
   my $rd = $conn->function_lookup("RFC_READ_TABLE");
   my $rc = $rd->create_function_call;
@@ -216,6 +219,7 @@ a value from them afterwards.  In the example below, COUNTER is set and then
 incremented within the RFC call.
 
 B<Example:>
+
   my $conn = SAPNW::Rfc->rfc_connect;
   my $rd = $conn->function_lookup("STFC_CHANGING");
   my $rc = $rd->create_function_call;
@@ -243,6 +247,7 @@ STFC_DEEP_STRUCTURE and STFC_DEEP_TABLE, which contain the simplest example of
 structures that contain strings.
 
 B<Example:>
+
   my $conn = SAPNW::Rfc->rfc_connect;
   my $fds = $conn->function_lookup("STFC_DEEP_STRUCTURE");
   my $fs = $fds->create_function_call;
@@ -266,6 +271,7 @@ standard rfcexec demo example that is supplied with the SAP NW
 RFCSDK written in C++.
 
 B<Example:>
+
   SAPNW::Rfc->load_config;
   my $server = SAPNW::Rfc->rfc_register;
   
@@ -384,7 +390,7 @@ When I receive prebuilt PPDs from Olivier (and anyone else who wants to), I make
 
 =over 4
 
-=item L<SAPNW::Rfc>, perl(1), ABAP(101).
+=item L<sapnwrfc>, L<http://search.cpan.org/dist/sapnwrfc/README>, L<SAPNW::Rfc>, perl(1), ABAP(101).
 
 =back
 
