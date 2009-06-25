@@ -1851,13 +1851,16 @@ void set_char_value(DATA_CONTAINER_HANDLE hcont, SAP_UC *name, SV* sv_value, uns
     SAP_UC *p_value;
 
 
-    if(SvTYPE(sv_value) != SVt_PV && SvTYPE(sv_value) != SVt_PVMG)
+    if(SvTYPE(sv_value) != SVt_PV && SvTYPE(sv_value) != SVt_PVMG) {
         croak("RfcSetChar (%s): not a Scalar\n", sv_pv(u16to8(name)));
-    if (SvCUR(sv_value) > max)
+    }
+    if (SvCUR(sv_value) > max) {
         croak("RfcSetChar string too long (%s): %s\n", sv_pv(u16to8(name)), sv_pv(sv_value));
+    }
 
     p_value = u8to16(sv_value);
     rc = RfcSetChars(hcont, name, p_value, strlenU(p_value), &errorInfo);
+//    fprintfU(stderr, cU("set %s value max(%d) len(%d): %s - rc: %d\n"), name, max, strlenU(p_value), p_value, rc);
     free(p_value);
     if (rc != RFC_OK) {
         croak("Problem with RfcSetChars (%s): %d / %s / %s\n",
@@ -2551,7 +2554,7 @@ RFC_RC SAP_API myrfc_function_callback(RFC_CONNECTION_HANDLE rfcHandle, RFC_FUNC
         }
 
         /* create a new parameter obj */
-//        fprintfU(stderr, cU("Parameter (%d): %s - direction: (%d) - type(%d)\n"), i, parm_desc.name, parm_desc.direction, parm_desc.type);
+//        fprintfU(stderr, cU("Parameter (%d): %s - direction: (%d) - type(%d) len: %d ulen: %d\n"), i, parm_desc.name, parm_desc.direction, parm_desc.type, parm_desc.nucLength, parm_desc.ucLength);
         sv_name = u16to8(parm_desc.name);
         switch(parm_desc.direction) {
             case RFC_IMPORT:
@@ -2604,7 +2607,6 @@ RFC_RC SAP_API myrfc_function_callback(RFC_CONNECTION_HANDLE rfcHandle, RFC_FUNC
                 free(p_name);
                 hv_store_ent(hv_parameters, sv_name, newRV_noinc((SV*)av_value), 0);
                 break;
-
         }
         sv_2mortal(sv_name);
     }
@@ -2725,7 +2727,7 @@ RFC_RC SAP_API myrfc_function_callback(RFC_CONNECTION_HANDLE rfcHandle, RFC_FUNC
             free(p_name);
             break;
         default:
-            fprintf(stderr, "should get here!\n");
+            fprintf(stderr, "shouldnt get here!\n");
             exit(1);
             break;
         }

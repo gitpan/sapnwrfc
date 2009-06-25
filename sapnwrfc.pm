@@ -9,7 +9,7 @@ use 5.010;
 =cut
 
 use vars qw($VERSION $AUTOLOAD $DEBUG);
-$VERSION = '0.27';
+$VERSION = '0.28';
 
 use SAPNW::Base;
 $SAPNW::Base::DEBUG = 0;
@@ -35,12 +35,12 @@ sapnwrfc - SAP Netweaver RFC support for Perl
   my $rd = $conn->function_lookup("RPY_PROGRAM_READ");
   my $rc = $rd->create_function_call;
   $rc->PROGRAM_NAME("SAPLGRFC");
-	eval {
-  $rc->invoke;
-	};
-	if ($@) {
-	  die "RFC Error: $@\n";
-	}
+  eval {
+      $rc->invoke;
+  };
+  if ($@) {
+    die "RFC Error: $@\n";
+  }
   print "Program name: ".$rc->PROG_INF->{'PROGNAME'}."\n";
   my $cnt_lines_with_text = scalar grep(/LGRFCUXX/, map { $_->{LINE} } @{$rc->SOURCE_EXTENDED});
   $conn->disconnect;
@@ -61,6 +61,8 @@ The next generation RFCSDK from SAP provides a number of interesting new feature
 =back
 
 Comprehensive examples can be found in the L<sapnwrfc-cookbook>.
+
+Help on building sapnwrfc can be found in the README - L<http://search.cpan.org/dist/sapnwrfc/README>.
 
 The UNICODE support is built fundamentally into the core of the new SDK, and as a result this is reflected in sapnwrfc. sapnwrfc takes UTF-8 as its only input character set, and handles the translation of this to UTF-16 as required by the RFCSDK.
 

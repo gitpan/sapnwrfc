@@ -13,7 +13,7 @@ use SAPNW::Base;
 use base qw(SAPNW::Base);
 
 use vars qw($VERSION $AUTOLOAD);
-$VERSION = '0.27';
+$VERSION = '0.28';
 
 
   sub AUTOLOAD {
@@ -61,6 +61,12 @@ $VERSION = '0.27';
         ref($name) eq "SAPNW::RFC::Changing" ||
         ref($name) eq "SAPNW::RFC::Table") {
         my $k = $name->name;
+        
+        # XXX temporary hack to fix Imports that dont work - make then changing
+        if (ref($name) eq "SAPNW::RFC::Import") {
+            $name->{direction} = RFCCHANGING;
+            bless $name, "SAPNW::RFC::Changing";
+        }
         $self->{parameters}->{$k} = SAPNW::Connection::add_parameter($self, $name);
         return $self->{parameters}->{$k};
     }
