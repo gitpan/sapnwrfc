@@ -5,5 +5,5 @@ user: developer
 passwd: developer
 lcheck: 1
 lang: EN
-trace: 2
+trace: 0
 debug: 0

@@ -1614,10 +1614,10 @@ SV * get_table_line(RFC_STRUCTURE_HANDLE line){
         }
 
         /* process each field type ...*/
-        hv_store_ent(hv_val, sv_2mortal(u16to8(fieldDesc.name)), get_field_value(line, fieldDesc), 0);
+        hv_store_ent(hv_val, sv_2mortal(u16to8(fieldDesc.name)), sv_2mortal(SvREFCNT_inc(get_field_value(line, fieldDesc))), 0);
     }
 
-    return newRV_noinc((SV*)hv_val);
+    return newRV_noinc((SV*)sv_2mortal(SvREFCNT_inc(hv_val)));
 }
 
 
@@ -1737,7 +1737,7 @@ SV * get_parameter_value(SV* sv_name, SAPNW_FUNC *fptr){
     }
     free(p_name);
 
-    return sv_2mortal(sv_pvalue);
+    return sv_pvalue;
 }
 
 
@@ -2558,12 +2558,12 @@ RFC_RC SAP_API myrfc_function_callback(RFC_CONNECTION_HANDLE rfcHandle, RFC_FUNC
         sv_name = u16to8(parm_desc.name);
         switch(parm_desc.direction) {
             case RFC_IMPORT:
-                hv_store_ent(hv_parameters, sv_name, sv_2mortal(newSV(0)), 0);
+                hv_store_ent(hv_parameters, sv_name, sv_2mortal(SvREFCNT_inc(newSV(0))), 0);
                 break;
             case RFC_EXPORT:
             case RFC_CHANGING:
                 sv_value = get_parameter_value(sv_name, fptr);
-                hv_store_ent(hv_parameters, sv_name, sv_value, 0);
+                hv_store_ent(hv_parameters, sv_name, sv_2mortal(SvREFCNT_inc(sv_value)), 0);
                 break;
             case RFC_TABLES:
                 rc = RfcGetTable(fptr->handle, (p_name = u8to16(sv_name)), &tableHandle, &errorInfo);
@@ -2605,7 +2605,7 @@ RFC_RC SAP_API myrfc_function_callback(RFC_CONNECTION_HANDLE rfcHandle, RFC_FUNC
                     av_push(av_value, get_table_line(line));
                 }
                 free(p_name);
-                hv_store_ent(hv_parameters, sv_name, newRV_noinc((SV*)av_value), 0);
+                hv_store_ent(hv_parameters, sv_name, newRV_noinc(sv_2mortal(SvREFCNT_inc((SV*)av_value))), 0);
                 break;
         }
         sv_2mortal(sv_name);
@@ -2919,8 +2919,7 @@ SV * SAPNWRFC_invoke(SV* sv_func_call){
             case RFC_EXPORT:
             case RFC_CHANGING:
                 sv_value = get_parameter_value(sv_name, fptr);
-                SvREFCNT_inc(sv_value);
-                hv_store_ent(hv_parm, sv_2mortal(newSVpv("value", 0)), sv_value, 0);
+                hv_store_ent(hv_parm, sv_2mortal(newSVpv("value", 0)), sv_2mortal(SvREFCNT_inc(sv_value)), 0);
                 break;
             case RFC_TABLES:
                 rc = RfcGetTable(fptr->handle, (p_name = u8to16(sv_name)), &tableHandle, &errorInfo);
@@ -2946,7 +2945,7 @@ SV * SAPNWRFC_invoke(SV* sv_func_call){
                     av_push(av_value, get_table_line(line));
                 }
                 free(p_name);
-                hv_store_ent(hv_parm, sv_2mortal(newSVpv("value", 0)), newRV_noinc((SV*)av_value), 0);
+                hv_store_ent(hv_parm, sv_2mortal(newSVpv("value", 0)), newRV_noinc(sv_2mortal(SvREFCNT_inc((SV*)av_value))), 0);
                 break;
         }
     }

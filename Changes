@@ -26,3 +26,6 @@ Mon Jun 22 16:51:14 NZST 2009
   
  Tue Jun 23 17:00:52 NZST 2009
    * further banishment of memory leaks when using tables in RFC client calls
+ 
+ Sat Jun 27 17:55:17 NZST 2009
+   * very slow memory leak with respect to referencing table entries on RFC client calls.

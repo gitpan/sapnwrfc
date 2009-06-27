@@ -14,7 +14,7 @@ use Data::Dumper;
 require 5.008;
 
 use vars qw(@ISA $VERSION $SAPNW_RFC_CONFIG);
-$VERSION = '0.29';
+$VERSION = '0.30';
 @ISA = qw(SAPNW::Base);
 
 use YAML;
@@ -58,6 +58,9 @@ sub rfc_connect {
   
     my $config = { (map { $_ => "$SAPNW_RFC_CONFIG->{$_}" } (grep {$_ !~ /tpname|gwhost|gwserv/i } (keys %$SAPNW_RFC_CONFIG))), @rest };
     map {$config->{$_} = "$config->{$_}"} keys %$config;
+    if (exists $config->{debug}) {
+        $SAPNW::Base::DEBUG = $config->{debug};
+    }
     debug("config passed on: ".Dumper($config));
     my $conn = new SAPNW::Connection(%{$config});
     $conn->connect();
@@ -73,6 +76,9 @@ sub rfc_register {
   
     my $config = { (map { $_ => $SAPNW_RFC_CONFIG->{$_} } (grep {$_ =~ /tpname|gwhost|gwserv|debug|trace/i } (keys %$SAPNW_RFC_CONFIG))), @rest };
     map {$config->{$_} = "$config->{$_}"} keys %$config;
+    if (exists $config->{debug}) {
+        $SAPNW::Base::DEBUG = $config->{debug};
+    }
     debug("config passed on: ".Dumper($config));
     my $conn = new SAPNW::Connection(%{$config});
     $conn->connect();
