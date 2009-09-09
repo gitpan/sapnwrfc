@@ -1,7 +1,8 @@
-use 5.010;
-# you must - repeat MUST have Perl 5.8 or greater !!!!
 use ExtUtils::MakeMaker;
 use Getopt::Long;
+# you must - repeat MUST have Perl 5.8 or greater !!!!
+require 5.008;
+
 use vars qw($opt_source $opt_addlibs $opt_embed_manifest $opt_help);
 
 &GetOptions("source=s", \$opt_source, "addlibs=s", \$opt_addlibs, "embed-manifest", \$opt_embed_manifest, "help", \$opt_help);
@@ -75,7 +76,7 @@ sub MY::ppd {
 
 
 WriteMakefile(
-    clean => { 'FILES'    => 'CPICTRC* ./.rfc_cache/* ./examples/.rfc_cache/* ./examples/*.trc ./examples/CPICTRC* *.inl *.trc testconn ./examples/testconn *~ core test*.txt *.tar.gz *.i *.ii' },
+    clean => { 'FILES'    => 'CPICTRC* ./examples/*.trc ./examples/CPICTRC* *.trc *~ core test*.txt *.tar.gz *.i *.ii' },
     dist => { 'TARFLAGS'    => 'cvf',
               'COMPRESS'        => 'gzip -9f',
             'SUFFIX'    => '.tgz'},

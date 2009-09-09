@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               sapnwrfc
-version:            0.30
+version:            0.31
 abstract:           sapnwrfc - SAP Netweaver RFC support for Perl
 author:
     - Piers Harding <piers@cpan.org>

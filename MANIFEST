@@ -2,6 +2,7 @@ README
 Changes
 MANIFEST
 Makefile.PL
+META.yml
 sap.yml
 sapnwrfc.pm
 sapnwrfc-cookbook.pod
@@ -27,4 +28,3 @@ t/06test_data_z.t
 t/07changing_z.t
 t/08deep_z.t
 examples/register.pl
-META.yml                                 Module meta-data (added by MakeMaker)
