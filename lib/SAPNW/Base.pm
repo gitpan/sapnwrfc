@@ -2,7 +2,7 @@ package SAPNW::Base;
 
 =pod
 
-    Copyright (c) 2006 - 2009 Piers Harding.
+    Copyright (c) 2006 - 2010 Piers Harding.
         All rights reserved.
 
 =cut
@@ -12,7 +12,7 @@ package SAPNW::Base;
   use Data::Dumper;
 
   use vars qw($VERSION $DEBUG $SAPNW_RFC_CONFIG);
-  $VERSION = '0.31';
+  $VERSION = '0.32';
 
   use constant RFCIMPORT     => 1;
   use constant RFCEXPORT     => 2;

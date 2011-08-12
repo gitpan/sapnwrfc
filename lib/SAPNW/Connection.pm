@@ -2,7 +2,7 @@ package SAPNW::Connection;
 
 =pod
 
-    Copyright (c) 2006 - 2009 Piers Harding.
+    Copyright (c) 2006 - 2010 Piers Harding.
         All rights reserved.
 
 =cut
@@ -19,7 +19,7 @@ package SAPNW::Connection;
 
 
   use vars qw(@ISA $VERSION $DEBUG $SAPNW_RFC_CONFIG);
-  $VERSION = '0.31';
+  $VERSION = '0.32';
   @ISA = qw(DynaLoader Exporter); 
 
   sub dl_load_flags { $^O =~ /hpux|aix/ ? 0x00 : 0x01 }

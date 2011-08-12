@@ -3,13 +3,13 @@ use strict;
 use 5.008;
 =pod
 
-    Copyright (c) 2006 - 2009 Piers Harding.
+    Copyright (c) 2006 - 2010 Piers Harding.
     All rights reserved.
 
 =cut
 
 use vars qw($VERSION $AUTOLOAD $DEBUG);
-$VERSION = '0.31';
+$VERSION = '0.32';
 
 use SAPNW::Base;
 $SAPNW::Base::DEBUG = 0;

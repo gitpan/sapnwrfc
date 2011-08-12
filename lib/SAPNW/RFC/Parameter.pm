@@ -1,7 +1,7 @@
 package SAPNW::RFC::Parameter;
 =pod
 
-    Copyright (c) 2006 - 2009 Piers Harding.
+    Copyright (c) 2006 - 2010 Piers Harding.
     All rights reserved.
 
 =cut
@@ -11,7 +11,7 @@ use SAPNW::Base;
 use base qw(SAPNW::Base);
 
 use vars qw($VERSION $AUTOLOAD);
-$VERSION = '0.31';
+$VERSION = '0.32';
 
 
   sub new {
