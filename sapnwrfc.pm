@@ -9,10 +9,14 @@ use 5.008;
 =cut
 
 use vars qw($VERSION $AUTOLOAD $DEBUG);
-$VERSION = '0.34';
+$VERSION = '0.35';
 
 use SAPNW::Base;
 $SAPNW::Base::DEBUG = 0;
+
+if ($^O eq 'solaris') {
+    $ENV{'RSCP_CATCH_INIT'} = '0';
+}
 
 use SAPNW::Rfc;
 use SAPNW::Connection;

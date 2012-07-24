@@ -33,6 +33,30 @@ if($^O eq 'MSWin32') {
   $ADD_FLAGS .= " -DSAPwithUNICODE ";
   $ADD_FLAGS .= " -DSAPonNT ";
   $ADD_FLAGS .= " -DSAP_PLATFORM_MAKENAME=ntintel ";
+} elsif($^O eq 'aix') {
+  $ADD_FLAGS  = $Config{ccflags} . ' ' . $Config{ccflags_uselargefiles};
+  $ADD_FLAGS .= " -DSAPwithUNICODE ";
+  $ADD_FLAGS .= " -DSAPonUNIX ";
+  $ADD_FLAGS .= " -D_AIX51 -D_LARGE_FILES -U__unix -q64 -qtbtable=full -qhalt=e -qalias=noansi -qfdpr -O -qstrict -qlibansi -qinlglue -qmaxmem=8192 -qarch=ppc -qtune=pwr5 -qspill=2560 -DSAPonRS6000 -D__NO_XLC_BUILTIN_VA ";
+  $ADD_FLAGS .= " -DSAPwithTHREADS ";
+  $ADD_FLAGS .= " -DNDEBUG ";
+  $ADDITIONAL_LIBS = '-lm -ldl -lrt -lnsl -lpthread -licudecnumber ';
+} elsif($^O eq 'solaris') {
+  $ADD_FLAGS  = $Config{ccflags} . ' ' . $Config{ccflags_uselargefiles};
+  $ADD_FLAGS .= " -DSAPwithUNICODE ";
+  $ADD_FLAGS .= " -DSAPonUNIX ";
+  $ADD_FLAGS .= " -DSAPonSUN -D__EXTENSIONS__ -D__XPG4_CHAR_CLASS__ -D_POSIX_PTHREAD_SEMANTICS -xchar=unsigned -xustr=ascii_utf16_ushort -w -xO3 -xcode=pic32 -mt -norunpath -R -z rescan ";
+  $ADD_FLAGS .= " -DSAPwithTHREADS ";
+  $ADD_FLAGS .= " -DNDEBUG ";
+  $ADDITIONAL_LIBS = '-lm -ldl -lrt -lnsl -lpthread -licudecnumber ';
+} elsif($^O eq 'hpux') {
+  $ADD_FLAGS  = $Config{ccflags} . ' ' . $Config{ccflags_uselargefiles};
+  $ADD_FLAGS .= " -DSAPwithUNICODE ";
+  $ADD_FLAGS .= " -DSAPonUNIX ";
+  $ADD_FLAGS .= " -D__NO_MATH_INLINES ";
+  $ADD_FLAGS .= " -DSAPwithTHREADS ";
+  $ADD_FLAGS .= " -DSAPonHPIA64 +DD64 +DSitanium2 -Aa +Olibmerrno +Oinitcheck +We281 +W392,829,818,887 -mt -w +O2 +Onolimit +Oprocelim -DNDEBUG ";
+  $ADDITIONAL_LIBS = '-lm -ldl -lrt -lnsl -lpthread -licudecnumber -lCsup ';
 } else {
   $ADD_FLAGS  = $Config{ccflags} . ' ' . $Config{ccflags_uselargefiles};
   $ADD_FLAGS .= " -DSAPwithUNICODE ";
@@ -200,7 +224,7 @@ sub MY::constants {
 sub MY::c_o {
   my $self = shift; 
   my $section = $self->MM::c_o;
-  if ($^O !~ /MSWin32/i){
+  if ($^O !~ /(MSWin32|hpux|solaris)/i){
     $section =~ s/(\$\*\.i)/$1i\n\t\$\(FULLPERL\) ..\/..\/tools\/u16lit\.pl \-le \$\(BASEEXT\)\.ii/s;
 		#.c$(OBJ_EXT):
 		#        $(CCCMD) $(CCCDLFLAGS) "-I$(PERL_INC)" $(PASTHRU_DEFINE) $(DEFINE) $*.c
@@ -221,7 +245,7 @@ sub MY::dynamic_lib {
 	  $section .= "\tmt.exe -outputresource:Connection.dll;2 -manifest Connection.dll.manifest\n";
 	  $section .= "\tcd ..\\..\\..\\..\\..\\lib\\SAPNW\n";
 	}
-  if ($^O !~ /MSWin32/i){
+  if ($^O !~ /(MSWin32|hpux|solaris)/i){
 	  $section =~ s/(\$\(INST_DYNAMIC\)\: )/$1\$\(BASEEXT\)\.i /s;
 	#  print STDERR "dynamic_lib: $section\n";
 	}
